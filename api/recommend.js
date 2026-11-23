@@ -33,7 +33,7 @@ module.exports = async (req, res) => {
 {"cityMeta":{"centerName":"중심지","waterLabel":"강/바다","parkLabel":"공원","stations":["역1","역2","역3"]},"strategy":"추천전략 1줄","restaurants":[{"id":"r1","name":"한글명","localName":"원문명","category":"카테고리","signatureMenu":"대표메뉴","rating":4.2,"reviews":500,"walkTime":"도보 5분","price":"가격대","hours":"영업시간","tip":"짧은 팁","isOpen":true,"x":1220,"y":1310}],"attractions":[{"id":"a1","name":"한글명","localName":"원문명","category":"카테고리","walkTime":"도보 6분","hours":"영업시간","tip":"짧은 팁","x":1580,"y":1250}]}`;
 
     // 가볍고 빠른 모델부터 시도 (각 모델당 최대 8초만 대기)
-    const models = ['gemini-3.8-flash-lite', 'gemini-3.8-flash'];
+    const models = ['gemini-2.5-flash', 'gemini-2.5-flash-lite', 'gemini-3.8-flash'];
     let lastError = '응답 시간 초과';
 
     for (const model of models) {
