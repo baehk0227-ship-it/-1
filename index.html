@@ -1,0 +1,2678 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#1a73e8">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="TripTaste Map">
+    <title>TripTaste Map — 글로벌 여행 맛집 & 동선 AI 가이드</title>
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Pretendard, Noto Sans KR & Google Material Symbols Rounded -->
+    <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,400..700,0..1,-50..200" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Pretendard', 'Noto Sans KR', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+                    },
+                    colors: {
+                        gblue: '#1a73e8',
+                        gblueLight: '#e8f0fe',
+                        gred: '#ea4335',
+                        gyellow: '#fbbc04',
+                        ggreen: '#188038',
+                        ggray: '#5f6368',
+                        gdark: '#202124',
+                    },
+                    boxShadow: {
+                        'gmaps': '0 2px 8px rgba(60,64,67,0.22), 0 1px 2px rgba(60,64,67,0.14)',
+                        'gmaps-lg': '0 6px 20px rgba(60,64,67,0.26), 0 2px 6px rgba(60,64,67,0.12)',
+                        'gmaps-chip': '0 1px 4px rgba(60,64,67,0.24)',
+                        'sheet': '0 -4px 20px rgba(0,0,0,0.14)',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* =========================================================
+           1. GOOGLE MAPS LIGHT & NIGHT THEME TOKENS
+           ========================================================= */
+        :root {
+            --map-bg: #f1f3f4;
+            --map-block: #e8eaed;
+            --map-building: #dde1e6;
+            --map-building-stroke: #cfd4da;
+            --map-park: #ceead6;
+            --map-park-tree: #a8dab5;
+            --map-park-path: #e6f4ea;
+            --map-water: #aad3df;
+            --map-water-edge: #91c2d1;
+            --map-road-major: #fde293;
+            --map-road-major-edge: #f3c458;
+            --map-road-highway: #fcd077;
+            --map-road-highway-edge: #e5ad3c;
+            --map-road-minor: #ffffff;
+            --map-road-minor-edge: #dadce0;
+            --map-subway-1: #4285f4;
+            --map-subway-2: #ea4335;
+            --map-label-district: #5f6368;
+            --map-label-water: #2c6f97;
+            --map-label-park: #187534;
+            --map-label-halo: rgba(255, 255, 255, 0.92);
+            --map-station-bg: #ffffff;
+            --map-station-text: #202124;
+            --map-station-border: #dadce0;
+            --bottom-nav-base: 64px;
+            --safe-bottom: env(safe-area-inset-bottom, 0px);
+            --bottom-nav-total: calc(var(--bottom-nav-base) + var(--safe-bottom));
+        }
+
+        .map-dark {
+            --map-bg: #1e242d;
+            --map-block: #262f3c;
+            --map-building: #2f3a4a;
+            --map-building-stroke: #394659;
+            --map-park: #1e3b35;
+            --map-park-tree: #285249;
+            --map-park-path: #254740;
+            --map-water: #142a40;
+            --map-water-edge: #1c3a57;
+            --map-road-major: #8b734b;
+            --map-road-major-edge: #6b5839;
+            --map-road-highway: #9e7e46;
+            --map-road-highway-edge: #755b2e;
+            --map-road-minor: #394557;
+            --map-road-minor-edge: #2a3442;
+            --map-subway-1: #669df6;
+            --map-subway-2: #f28b82;
+            --map-label-district: #9aa0a6;
+            --map-label-water: #78a9d6;
+            --map-label-park: #81c995;
+            --map-label-halo: rgba(30, 36, 45, 0.92);
+            --map-station-bg: #2c3543;
+            --map-station-text: #e8eaed;
+            --map-station-border: #4a5568;
+        }
+
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: 'Pretendard', 'Noto Sans KR', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: var(--map-bg);
+            -webkit-tap-highlight-color: transparent;
+            overscroll-behavior: none;
+            user-select: none;
+        }
+
+        input, textarea, p, h1, h2, h3, h4 {
+            user-select: text;
+        }
+
+        .material-symbols-rounded {
+            font-variation-settings: 'FILL' 0, 'wght' 500, 'GRAD' 0, 'opsz' 24;
+            user-select: none;
+            line-height: 1;
+        }
+        .material-symbols-rounded.filled {
+            font-variation-settings: 'FILL' 1, 'wght' 500, 'GRAD' 0, 'opsz' 24;
+        }
+
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        .panel-scroll::-webkit-scrollbar { width: 5px; }
+        .panel-scroll::-webkit-scrollbar-track { background: transparent; }
+        .panel-scroll::-webkit-scrollbar-thumb {
+            background-color: rgba(95, 99, 104, 0.28);
+            border-radius: 9999px;
+        }
+
+        /* =========================================================
+           2. FULL-SCREEN 2800x2800 INTERACTIVE VECTOR MAP ENGINE
+           ========================================================= */
+        #map-viewport {
+            position: fixed;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: var(--map-bg);
+            cursor: grab;
+            touch-action: none;
+            z-index: 1;
+            transition: background-color 0.25s ease;
+        }
+        #map-viewport.is-dragging {
+            cursor: grabbing;
+        }
+
+        /* Subtle infinite grid outside 2800x2800 for seamless 30% zoom-out */
+        #map-viewport::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background-image:
+                linear-gradient(to right, rgba(140, 150, 165, 0.09) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(140, 150, 165, 0.09) 1px, transparent 1px);
+            background-size: 48px 48px;
+            pointer-events: none;
+        }
+
+        #map-stage {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 2800px;
+            height: 2800px;
+            transform-origin: 0 0;
+            will-change: transform;
+        }
+        #map-stage.smooth-transition {
+            transition: transform 0.42s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+        .svg-label-halo {
+            paint-order: stroke;
+            stroke: var(--map-label-halo);
+            stroke-width: 6px;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        /* Pulsing Blue Center Landmark Dot */
+        @keyframes pulse-ring {
+            0% { transform: scale(0.7); opacity: 0.78; }
+            70% { transform: scale(2.5); opacity: 0; }
+            100% { transform: scale(2.5); opacity: 0; }
+        }
+        .blue-dot-pulse {
+            animation: pulse-ring 2.2s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+        }
+
+        /* Scale-Compensated Map Pins (Readable from 0.3x to 3.0x) */
+        .map-pin-anchor {
+            position: absolute;
+            transform: translate(-50%, -100%) scale(var(--inv-scale, 1));
+            transform-origin: 50% 100%;
+            z-index: 20;
+            cursor: pointer;
+            pointer-events: auto;
+        }
+        .map-pin-anchor:hover { z-index: 60 !important; }
+        .map-pin-anchor.is-selected { z-index: 75 !important; }
+
+        .map-pin-body {
+            transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+            transform-origin: bottom center;
+        }
+        .map-pin-anchor.is-selected .map-pin-body {
+            transform: scale(1.16);
+        }
+
+        .map-landmark-anchor {
+            position: absolute;
+            transform: translate(-50%, -50%) scale(var(--inv-scale, 1));
+            transform-origin: 50% 50%;
+            z-index: 15;
+            cursor: pointer;
+            pointer-events: auto;
+        }
+
+        #map-popup-wrapper {
+            position: absolute;
+            transform: translate(-50%, calc(-100% - 62px)) scale(var(--popup-scale, 1));
+            transform-origin: 50% 100%;
+            z-index: 95;
+            pointer-events: auto;
+        }
+
+        /* Indeterminate Loading Bar */
+        @keyframes g-indeterminate {
+            0% { transform: translateX(-100%) scaleX(0.25); }
+            50% { transform: translateX(0%) scaleX(0.6); }
+            100% { transform: translateX(100%) scaleX(0.25); }
+        }
+        .g-progress-bar {
+            animation: g-indeterminate 1.35s infinite ease-in-out;
+        }
+
+        /* =========================================================
+           3. MOBILE 3-STAGE BOTTOM SHEET & DESKTOP SIDEBAR (>=768px)
+           ========================================================= */
+        #side-panel {
+            bottom: var(--bottom-nav-total);
+            will-change: height, transform;
+        }
+        #side-panel.sheet-animating {
+            transition: height 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+        #mobile-bottom-nav {
+            height: var(--bottom-nav-total);
+            padding-bottom: var(--safe-bottom);
+        }
+
+        @media (min-width: 768px) {
+            #side-panel {
+                height: 100% !important;
+                bottom: 0 !important;
+                transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1) !important;
+            }
+            #side-panel.desktop-collapsed {
+                transform: translateX(-100%);
+            }
+        }
+
+        #map-controls-stack {
+            transition: bottom 0.32s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.2s ease;
+        }
+    </style>
+</head>
+<body class="text-gdark antialiased">
+
+    <!-- ========================================================= -->
+    <!-- 1. FULL-SCREEN 2800x2800 INTERACTIVE SVG VECTOR MAP       -->
+    <!-- ========================================================= -->
+    <div id="map-viewport" aria-label="인터랙티브 여행 지도">
+        <div id="map-stage">
+            <svg id="vector-map-svg" viewBox="0 0 2800 2800" width="2800" height="2800" xmlns="http://www.w3.org/2000/svg" class="block">
+                <defs>
+                    <filter id="pill-shadow" x="-20%" y="-20%" width="140%" height="140%">
+                        <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#000" flood-opacity="0.22"/>
+                    </filter>
+                    <pattern id="outer-city-blocks" width="220" height="220" patternUnits="userSpaceOnUse">
+                        <rect x="14" y="14" width="90" height="82" rx="6" fill="var(--map-block)" opacity="0.72" />
+                        <rect x="120" y="14" width="84" height="92" rx="6" fill="var(--map-block)" opacity="0.65" />
+                        <rect x="14" y="114" width="90" height="92" rx="6" fill="var(--map-block)" opacity="0.65" />
+                        <rect x="120" y="122" width="84" height="84" rx="6" fill="var(--map-block)" opacity="0.72" />
+                    </pattern>
+                </defs>
+
+                <!-- 1. Base Metropolitan Land & Outer Blocks -->
+                <rect x="0" y="0" width="2800" height="2800" fill="var(--map-bg)" />
+                <rect x="0" y="0" width="2800" height="2800" fill="url(#outer-city-blocks)" />
+
+                <!-- 2. Detailed Central Downtown Blocks -->
+                <g fill="var(--map-block)">
+                    <rect x="640" y="640" width="320" height="240" rx="10" />
+                    <rect x="1000" y="640" width="360" height="240" rx="10" />
+                    <rect x="1420" y="640" width="350" height="230" rx="10" />
+                    <rect x="1810" y="640" width="340" height="250" rx="10" />
+
+                    <rect x="640" y="920" width="320" height="260" rx="10" />
+                    <rect x="1000" y="920" width="360" height="240" rx="10" />
+                    <rect x="1810" y="920" width="340" height="240" rx="10" />
+
+                    <rect x="640" y="1360" width="320" height="270" rx="10" />
+                    <rect x="1000" y="1350" width="360" height="280" rx="10" />
+                    <rect x="1420" y="1340" width="350" height="290" rx="10" />
+                    <rect x="1810" y="1360" width="340" height="270" rx="10" />
+
+                    <rect x="640" y="1680" width="320" height="290" rx="10" />
+                    <rect x="1000" y="1680" width="360" height="290" rx="10" />
+                    <rect x="1420" y="1680" width="350" height="290" rx="10" />
+                    <rect x="1810" y="1680" width="340" height="290" rx="10" />
+                </g>
+
+                <!-- 3. Building Footprints -->
+                <g fill="var(--map-building)" stroke="var(--map-building-stroke)" stroke-width="1.5">
+                    <rect x="1025" y="945" width="135" height="90" rx="5" />
+                    <rect x="1180" y="945" width="155" height="105" rx="5" />
+                    <rect x="1025" y="1055" width="135" height="85" rx="5" />
+                    <rect x="1180" y="1070" width="155" height="70" rx="5" />
+
+                    <rect x="1025" y="1375" width="145" height="105" rx="5" />
+                    <rect x="1190" y="1375" width="145" height="95" rx="5" />
+                    <rect x="1025" y="1500" width="310" height="105" rx="5" />
+
+                    <rect x="1445" y="1365" width="135" height="115" rx="5" />
+                    <rect x="1600" y="1365" width="145" height="100" rx="5" />
+                    <rect x="1445" y="1500" width="150" height="105" rx="5" />
+                    <rect x="1615" y="1485" width="130" height="120" rx="5" />
+
+                    <rect x="1835" y="1385" width="140" height="100" rx="5" />
+                    <rect x="1995" y="1385" width="130" height="215" rx="5" />
+                    <rect x="1835" y="1505" width="140" height="95" rx="5" />
+
+                    <rect x="1025" y="1705" width="155" height="120" rx="5" />
+                    <rect x="1200" y="1705" width="135" height="145" rx="5" />
+                    <rect x="1025" y="1845" width="310" height="100" rx="5" />
+
+                    <rect x="1445" y="1705" width="145" height="115" rx="5" />
+                    <rect x="1610" y="1705" width="135" height="135" rx="5" />
+                    <rect x="1445" y="1840" width="300" height="105" rx="5" />
+                </g>
+
+                <!-- 4. Parks & Greenery (#ceead6) -->
+                <g>
+                    <path d="M 1420 920 Q 1530 885 1660 915 L 1775 940 Q 1795 1030 1765 1145 Q 1650 1185 1495 1165 Q 1410 1145 1415 1030 Z" fill="var(--map-park)" />
+                    <path d="M 1440 1035 Q 1595 1005 1755 1045" fill="none" stroke="var(--map-park-path)" stroke-width="8" stroke-linecap="round" />
+                    <path d="M 1590 920 Q 1575 1030 1610 1155" fill="none" stroke="var(--map-park-path)" stroke-width="7" stroke-linecap="round" />
+                    <g fill="var(--map-park-tree)">
+                        <circle cx="1485" cy="975" r="20" /><circle cx="1518" cy="988" r="15" />
+                        <circle cx="1685" cy="975" r="22" /><circle cx="1715" cy="995" r="16" />
+                        <circle cx="1495" cy="1105" r="19" /><circle cx="1695" cy="1100" r="21" />
+                    </g>
+
+                    <rect x="260" y="340" width="320" height="240" rx="32" fill="var(--map-park)" />
+                    <path d="M 290 460 Q 420 420 550 475" fill="none" stroke="var(--map-park-path)" stroke-width="7" stroke-linecap="round" />
+                    <g fill="var(--map-park-tree)">
+                        <circle cx="350" cy="400" r="22" /><circle cx="490" cy="410" r="24" />
+                        <circle cx="410" cy="515" r="20" />
+                    </g>
+
+                    <rect x="1830" y="2020" width="420" height="240" rx="30" fill="var(--map-park)" />
+                    <path d="M 1865 2140 Q 2040 2090 2215 2150" fill="none" stroke="var(--map-park-path)" stroke-width="8" stroke-linecap="round" />
+                    <g fill="var(--map-park-tree)">
+                        <circle cx="1930" cy="2085" r="22" /><circle cx="2110" cy="2095" r="24" />
+                        <circle cx="2025" cy="2195" r="20" />
+                    </g>
+
+                    <rect x="665" y="965" width="220" height="150" rx="22" fill="var(--map-park)" />
+                    <circle cx="740" cy="1030" r="18" fill="var(--map-park-tree)" />
+                    <circle cx="815" cy="1055" r="20" fill="var(--map-park-tree)" />
+                </g>
+
+                <!-- 5. Winding River / Waterway (#aad3df) -->
+                <g>
+                    <path d="M -60 1340 C 380 1365, 760 1230, 1260 1255 C 1720 1278, 2120 1190, 2480 1265 C 2640 1295, 2740 1280, 2860 1255" fill="none" stroke="var(--map-water-edge)" stroke-width="102" stroke-linecap="round" />
+                    <path d="M -60 1340 C 380 1365, 760 1230, 1260 1255 C 1720 1278, 2120 1190, 2480 1265 C 2640 1295, 2740 1280, 2860 1255" fill="none" stroke="var(--map-water)" stroke-width="92" stroke-linecap="round" />
+                    <path d="M 2260 1235 C 2310 1540, 2420 1860, 2380 2860" fill="none" stroke="var(--map-water)" stroke-width="56" stroke-linecap="round" />
+                </g>
+
+                <!-- 6. White Secondary Streets & Alleys -->
+                <g stroke-linecap="round" stroke-linejoin="round">
+                    <g fill="none" stroke="var(--map-road-minor-edge)" stroke-width="16">
+                        <line x1="615" y1="0" x2="615" y2="2800" />
+                        <line x1="980" y1="0" x2="980" y2="2800" />
+                        <line x1="1790" y1="0" x2="1790" y2="2800" />
+                        <line x1="2170" y1="0" x2="2170" y2="2800" />
+                        <line x1="0" y1="620" x2="2800" y2="620" />
+                        <line x1="0" y1="900" x2="2800" y2="900" />
+                        <line x1="0" y1="1655" x2="2800" y2="1655" />
+                        <line x1="0" y1="1995" x2="2800" y2="1995" />
+                        <line x1="0" y1="2340" x2="2800" y2="2340" />
+                        <line x1="1180" y1="1330" x2="1180" y2="1995" stroke-width="9" />
+                        <line x1="1595" y1="1330" x2="1595" y2="1995" stroke-width="9" />
+                        <line x1="980" y1="1490" x2="2170" y2="1490" stroke-width="9" />
+                        <line x1="980" y1="1830" x2="2170" y2="1830" stroke-width="9" />
+                    </g>
+                    <g fill="none" stroke="var(--map-road-minor)" stroke-width="13">
+                        <line x1="615" y1="0" x2="615" y2="2800" />
+                        <line x1="980" y1="0" x2="980" y2="2800" />
+                        <line x1="1790" y1="0" x2="1790" y2="2800" />
+                        <line x1="2170" y1="0" x2="2170" y2="2800" />
+                        <line x1="0" y1="620" x2="2800" y2="620" />
+                        <line x1="0" y1="900" x2="2800" y2="900" />
+                        <line x1="0" y1="1655" x2="2800" y2="1655" />
+                        <line x1="0" y1="1995" x2="2800" y2="1995" />
+                        <line x1="0" y1="2340" x2="2800" y2="2340" />
+                        <line x1="1180" y1="1330" x2="1180" y2="1995" stroke-width="6.5" />
+                        <line x1="1595" y1="1330" x2="1595" y2="1995" stroke-width="6.5" />
+                        <line x1="980" y1="1490" x2="2170" y2="1490" stroke-width="6.5" />
+                        <line x1="980" y1="1830" x2="2170" y2="1830" stroke-width="6.5" />
+                    </g>
+                </g>
+
+                <!-- 7. Yellow Main Arterial Roads & Outer Ring Highway (#fde293) -->
+                <g stroke-linecap="round" stroke-linejoin="round">
+                    <g fill="none" stroke="var(--map-road-major-edge)" stroke-width="28">
+                        <path d="M 1390 0 L 1390 2800" />
+                        <path d="M 0 1335 Q 700 1320 1390 1322 Q 2080 1324 2800 1350" />
+                        <path d="M 0 845 Q 700 885 1390 880 Q 2100 875 2800 945" />
+                    </g>
+                    <g fill="none" stroke="var(--map-road-major)" stroke-width="22">
+                        <path d="M 1390 0 L 1390 2800" />
+                        <path d="M 0 1335 Q 700 1320 1390 1322 Q 2080 1324 2800 1350" />
+                        <path d="M 0 845 Q 700 885 1390 880 Q 2100 875 2800 945" />
+                    </g>
+                    <rect x="330" y="330" width="2140" height="2140" rx="280" fill="none" stroke="var(--map-road-highway-edge)" stroke-width="32" opacity="0.85" />
+                    <rect x="330" y="330" width="2140" height="2140" rx="280" fill="none" stroke="var(--map-road-highway)" stroke-width="24" opacity="0.9" />
+                </g>
+
+                <!-- 8. Transit / Subway Lines -->
+                <path d="M 180 1655 L 980 1655 Q 1160 1655 1280 1565 L 1790 1490 L 2620 1490" fill="none" stroke="var(--map-subway-1)" stroke-width="5" stroke-dasharray="14 9" opacity="0.72" />
+                <path d="M 1390 220 L 1390 1322 Q 1390 1490 1520 1655 L 1520 2580" fill="none" stroke="var(--map-subway-2)" stroke-width="4.5" stroke-dasharray="12 8" opacity="0.62" />
+
+                <!-- 9. Dynamic City Map Labels (Updated from cityMeta) -->
+                <g class="pointer-events-none">
+                    <text id="svg-label-water" x="1140" y="1264" fill="var(--map-label-water)" font-size="22" font-weight="700" letter-spacing="2" class="svg-label-halo">도톤보리 강</text>
+                    <text id="svg-label-park" x="1595" y="1038" text-anchor="middle" fill="var(--map-label-park)" font-size="20" font-weight="700" class="svg-label-halo">🌳 나카노시마 공원</text>
+
+                    <!-- Subway Station Badges -->
+                    <g transform="translate(970, 1655)" filter="url(#pill-shadow)">
+                        <rect x="-92" y="-20" width="184" height="40" rx="20" fill="var(--map-station-bg)" stroke="var(--map-station-border)" stroke-width="1.5" />
+                        <circle cx="-68" cy="0" r="11" fill="#1a73e8" />
+                        <text x="-68" y="4.5" text-anchor="middle" fill="#ffffff" font-size="13" font-weight="700">M</text>
+                        <text id="svg-label-station-0" x="12" y="5.5" text-anchor="middle" fill="var(--map-station-text)" font-size="15.5" font-weight="700">난바역</text>
+                    </g>
+
+                    <g transform="translate(1865, 1490)" filter="url(#pill-shadow)">
+                        <rect x="-92" y="-20" width="184" height="40" rx="20" fill="var(--map-station-bg)" stroke="var(--map-station-border)" stroke-width="1.5" />
+                        <circle cx="-68" cy="0" r="11" fill="#1a73e8" />
+                        <text x="-68" y="4.5" text-anchor="middle" fill="#ffffff" font-size="13" font-weight="700">M</text>
+                        <text id="svg-label-station-1" x="12" y="5.5" text-anchor="middle" fill="var(--map-station-text)" font-size="15.5" font-weight="700">닛폰바시역</text>
+                    </g>
+
+                    <g transform="translate(1390, 620)" filter="url(#pill-shadow)">
+                        <rect x="-92" y="-20" width="184" height="40" rx="20" fill="var(--map-station-bg)" stroke="var(--map-station-border)" stroke-width="1.5" />
+                        <circle cx="-68" cy="0" r="11" fill="#ea4335" />
+                        <text x="-68" y="4.5" text-anchor="middle" fill="#ffffff" font-size="13" font-weight="700">M</text>
+                        <text id="svg-label-station-2" x="12" y="5.5" text-anchor="middle" fill="var(--map-station-text)" font-size="15.5" font-weight="700">신사이바시역</text>
+                    </g>
+                </g>
+            </svg>
+
+            <!-- Interactive Scale-Compensated Pin Markers Layer -->
+            <div id="map-pins-layer" class="absolute inset-0 pointer-events-none"></div>
+
+            <!-- Floating Selected Place Mini-Card Popup -->
+            <div id="map-popup-wrapper" class="hidden"></div>
+        </div>
+    </div>
+
+    <!-- ========================================================= -->
+    <!-- 2. TOP FLOATING SEARCH HEADER (AUTOCOMPLETE + KEYWORD)    -->
+    <!-- ========================================================= -->
+    <header id="top-controls" class="fixed top-2.5 left-2.5 right-2.5 md:left-3 md:right-auto z-[1050] pointer-events-none flex flex-col gap-2 md:w-[376px]">
+
+        <!-- Google Maps Style Rounded Search Card -->
+        <div class="pointer-events-auto relative bg-white rounded-3xl shadow-gmaps border border-gray-200/90 transition-shadow focus-within:shadow-gmaps-lg">
+
+            <!-- Input 1: 여행 국가·도시 (Real-time Autocomplete) -->
+            <div class="flex items-center px-3.5 py-2 border-b border-gray-100 gap-2">
+                <span class="material-symbols-rounded text-gred text-[22px] filled flex-shrink-0">location_on</span>
+                <div class="flex-1 min-w-0">
+                    <input
+                        id="destination-input"
+                        type="text"
+                        placeholder="여행 국가·도시 검색 (예: 일본 오사카, 로마, 방콕)"
+                        class="w-full text-[14.5px] font-bold text-gdark placeholder-gray-400 bg-transparent focus:outline-none truncate py-1"
+                        autocomplete="off"
+                    />
+                </div>
+                <button
+                    id="dest-clear-btn"
+                    type="button"
+                    aria-label="여행지 지우기"
+                    class="w-8 h-8 rounded-full hover:bg-gray-100 flex items-center justify-center text-gray-400 hover:text-gdark flex-shrink-0 transition-colors"
+                >
+                    <span class="material-symbols-rounded text-[18px]">close</span>
+                </button>
+            </div>
+
+            <!-- Live Autocomplete Dropdown (55+ Destinations + Custom Direct Input) -->
+            <div
+                id="autocomplete-dropdown"
+                class="hidden absolute left-0 right-0 top-[54px] z-[1120] bg-white rounded-2xl shadow-gmaps-lg border border-gray-200 overflow-hidden"
+            >
+                <div class="px-3.5 py-2 bg-gray-50 border-b border-gray-100 flex items-center justify-between text-[12px] font-bold text-ggray">
+                    <span id="autocomplete-header-label">인기 해외·국내 여행지 선택</span>
+                    <button id="autocomplete-close-btn" type="button" aria-label="목록 닫기" class="text-gray-400 hover:text-gdark p-0.5">
+                        <span class="material-symbols-rounded text-[18px]">close</span>
+                    </button>
+                </div>
+                <div id="autocomplete-list" class="max-h-[268px] overflow-y-auto panel-scroll divide-y divide-gray-100"></div>
+            </div>
+
+            <!-- Input 2: AI 키워드 + "검색하기" Button -->
+            <div class="flex items-center pl-3.5 pr-2 py-1.5 gap-2">
+                <span class="material-symbols-rounded text-gblue text-[20px] flex-shrink-0">auto_awesome</span>
+                <input
+                    id="keyword-input"
+                    type="text"
+                    placeholder="돈키호테 근처 초밥, 혼밥, 가성비"
+                    class="flex-1 min-w-0 text-[14px] text-gdark placeholder-gray-400 bg-transparent focus:outline-none py-1.5"
+                    autocomplete="off"
+                />
+                <button
+                    id="search-submit-btn"
+                    type="button"
+                    class="min-h-[44px] px-4 rounded-2xl bg-gblue hover:bg-blue-700 active:scale-95 text-white text-[14px] font-bold flex items-center justify-center gap-1 flex-shrink-0 transition-all shadow-sm"
+                >
+                    <span class="material-symbols-rounded text-[18px]">search</span>
+                    <span>검색하기</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Horizontally Scrollable Filter & Quick Keyword Chips -->
+        <div class="pointer-events-auto flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5 max-w-full">
+            <!-- Rating Chips -->
+            <button data-rating="3.5" type="button" class="rating-chip min-h-[36px] flex-shrink-0 flex items-center gap-1 px-3 py-1.5 rounded-full text-[13px] font-bold shadow-gmaps-chip border transition-colors">
+                <span>⭐ 3.5+</span>
+            </button>
+            <button data-rating="4.0" type="button" class="rating-chip min-h-[36px] flex-shrink-0 flex items-center gap-1 px-3 py-1.5 rounded-full text-[13px] font-bold shadow-gmaps-chip border transition-colors">
+                <span>⭐ 4.0+</span>
+            </button>
+            <button data-rating="4.3" type="button" class="rating-chip min-h-[36px] flex-shrink-0 flex items-center gap-1 px-3 py-1.5 rounded-full text-[13px] font-bold shadow-gmaps-chip border transition-colors">
+                <span>⭐ 4.3+</span>
+            </button>
+
+            <!-- Open Now Toggle -->
+            <button
+                id="open-now-btn"
+                type="button"
+                class="min-h-[36px] flex-shrink-0 flex items-center gap-1 px-3 py-1.5 rounded-full text-[13px] font-bold shadow-gmaps-chip border transition-colors"
+            >
+                <span>🟢 영업중</span>
+            </button>
+
+            <!-- Quick Keyword Chips -->
+            <div id="quick-keyword-chips" class="flex items-center gap-1.5 flex-shrink-0"></div>
+        </div>
+    </header>
+
+    <!-- ========================================================= -->
+    <!-- 3. RIGHT FLOATING MAP CONTROLS (44px Circular Buttons)    -->
+    <!-- ========================================================= -->
+    <div id="map-controls-stack" class="fixed right-3 z-[1015] flex flex-col gap-2 items-center" style="bottom: 190px;">
+        <div id="zoom-badge" class="px-2.5 py-0.5 rounded-full bg-white/95 text-gdark text-[11px] font-bold shadow-gmaps border border-gray-200/80">
+            65%
+        </div>
+
+        <button
+            id="theme-toggle-btn"
+            type="button"
+            aria-label="야간 지도 전환"
+            title="기본 / 다크 지도 전환"
+            class="w-11 h-11 bg-white hover:bg-gray-50 active:scale-95 rounded-full shadow-gmaps border border-gray-200/90 flex items-center justify-center text-indigo-600 transition-all"
+        >
+            <span id="theme-toggle-icon" class="material-symbols-rounded text-[22px]">dark_mode</span>
+        </button>
+
+        <button
+            id="recenter-btn"
+            type="button"
+            aria-label="전체 보기 및 재정렬"
+            title="전체 보기 / 재정렬"
+            class="w-11 h-11 bg-white hover:bg-gray-50 active:scale-95 rounded-full shadow-gmaps border border-gray-200/90 flex items-center justify-center text-gblue transition-all"
+        >
+            <span class="material-symbols-rounded text-[22px]">my_location</span>
+        </button>
+
+        <button
+            id="zoom-in-btn"
+            type="button"
+            aria-label="지도 확대"
+            title="확대 (+)"
+            class="w-11 h-11 bg-white hover:bg-gray-50 active:scale-95 rounded-full shadow-gmaps border border-gray-200/90 flex items-center justify-center text-gdark transition-all"
+        >
+            <span class="material-symbols-rounded text-[24px]">add</span>
+        </button>
+
+        <button
+            id="zoom-out-btn"
+            type="button"
+            aria-label="지도 축소"
+            title="축소 (-)"
+            class="w-11 h-11 bg-white hover:bg-gray-50 active:scale-95 rounded-full shadow-gmaps border border-gray-200/90 flex items-center justify-center text-gdark transition-all"
+        >
+            <span class="material-symbols-rounded text-[24px]">remove</span>
+        </button>
+    </div>
+
+    <!-- ========================================================= -->
+    <!-- 4. 3-STAGE DRAGGABLE BOTTOM SHEET / DESKTOP 400px SIDEBAR -->
+    <!-- ========================================================= -->
+    <aside
+        id="side-panel"
+        class="fixed left-0 right-0 md:top-0 md:bottom-0 md:right-auto md:w-[400px] bg-white z-[1030] shadow-sheet md:shadow-gmaps-lg rounded-t-[26px] md:rounded-none flex flex-col"
+        style="height: 50vh;"
+    >
+        <!-- Desktop Collapse Handle -->
+        <button
+            id="desktop-collapse-btn"
+            type="button"
+            title="패널 접기/펼치기"
+            class="hidden md:flex items-center justify-center absolute -right-7 top-1/2 -translate-y-1/2 w-7 h-14 bg-white rounded-r-xl shadow-gmaps border border-l-0 border-gray-200 text-ggray hover:text-gdark cursor-pointer z-10"
+        >
+            <span id="desktop-collapse-icon" class="material-symbols-rounded text-[22px]">chevron_left</span>
+        </button>
+
+        <!-- Mobile Drag Handle Bar + Quick One-Tap Snap Pills (지도 / 중간 / 전체) -->
+        <div
+            id="sheet-drag-zone"
+            class="md:hidden w-full pt-2.5 pb-2.5 px-4 flex flex-col items-center justify-center cursor-grab active:cursor-grabbing border-b border-gray-100 select-none touch-none flex-shrink-0 bg-white rounded-t-[26px]"
+        >
+            <div class="w-12 h-1.5 bg-gray-300 rounded-full mb-2"></div>
+
+            <div class="w-full flex items-center justify-between gap-2">
+                <div class="min-w-0">
+                    <div id="mobile-sheet-title" class="text-[15.5px] font-bold text-gdark truncate">🇯🇵 일본 · 오사카</div>
+                    <div id="mobile-sheet-summary" class="text-[12.5px] text-ggray font-medium truncate">추천 맛집 4곳 · 근처 볼거리 2곳</div>
+                </div>
+                <div class="flex items-center gap-1 flex-shrink-0">
+                    <button type="button" data-snap="collapsed" class="snap-btn px-2.5 py-1.5 text-[12px] font-bold rounded-full bg-gray-100 text-ggray hover:bg-gray-200 transition-colors">지도</button>
+                    <button type="button" data-snap="half" class="snap-btn px-2.5 py-1.5 text-[12px] font-bold rounded-full bg-gblueLight text-gblue transition-colors">중간</button>
+                    <button type="button" data-snap="expanded" class="snap-btn px-2.5 py-1.5 text-[12px] font-bold rounded-full bg-gray-100 text-ggray hover:bg-gray-200 transition-colors">전체</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Desktop Top Spacer below Floating Search Card & Filter Chips -->
+        <div class="hidden md:block h-[166px] flex-shrink-0 bg-white"></div>
+
+        <!-- Desktop Top Tab Switcher (>=768px) -->
+        <div class="hidden md:flex items-center border-b border-gray-200 px-2 flex-shrink-0 bg-white">
+            <button data-tab="explore" type="button" class="desktop-tab flex-1 py-3 text-[14px] font-bold text-gblue border-b-[3px] border-gblue flex items-center justify-center gap-1.5 transition-colors">
+                <span class="material-symbols-rounded text-[20px]">explore</span>
+                <span>탐색</span>
+            </button>
+            <button data-tab="meals" type="button" class="desktop-tab flex-1 py-3 text-[14px] font-medium text-ggray border-b-[3px] border-transparent hover:text-gdark flex items-center justify-center gap-1.5 transition-colors">
+                <span class="material-symbols-rounded text-[20px]">restaurant_menu</span>
+                <span>내 식단</span>
+                <span class="meal-count-badge bg-gray-100 text-ggray text-[11px] font-bold px-1.5 py-0.5 rounded-full">1</span>
+            </button>
+            <button data-tab="bookmarks" type="button" class="desktop-tab flex-1 py-3 text-[14px] font-medium text-ggray border-b-[3px] border-transparent hover:text-gdark flex items-center justify-center gap-1.5 transition-colors">
+                <span class="material-symbols-rounded text-[20px]">favorite</span>
+                <span>찜 목록</span>
+                <span class="saved-count-badge bg-gray-100 text-ggray text-[11px] font-bold px-1.5 py-0.5 rounded-full">0</span>
+            </button>
+        </div>
+
+        <!-- Indeterminate AI Loading Bar + Status Banner -->
+        <div id="loading-bar-container" class="hidden flex-shrink-0 bg-blue-50 border-b border-blue-100">
+            <div class="w-full h-1 bg-blue-100 overflow-hidden">
+                <div class="w-full h-full bg-gblue g-progress-bar"></div>
+            </div>
+            <div class="px-4 py-2.5 flex items-center gap-2 text-[13.5px] font-bold text-gblue">
+                <span class="material-symbols-rounded text-[18px] animate-spin">progress_activity</span>
+                <span>AI가 현지 맛집과 볼거리를 찾는 중...</span>
+            </div>
+        </div>
+
+        <!-- Scrollable Tab Content -->
+        <div id="panel-scroll-container" class="flex-1 overflow-y-auto panel-scroll bg-[#f8f9fa]">
+
+            <!-- ==================== TAB 1: 탐색 (Explore) ==================== -->
+            <div id="tab-explore" class="tab-content p-4 space-y-5">
+
+                <!-- AI Dining & Keyword Strategy Banner -->
+                <div class="bg-gradient-to-br from-[#e8f0fe] via-white to-[#f3e8fd] rounded-2xl p-4 border border-blue-200/80 shadow-sm">
+                    <div class="flex items-center justify-between gap-2 mb-2">
+                        <div class="flex items-center gap-1.5 min-w-0">
+                            <span class="material-symbols-rounded text-gblue text-[20px] filled flex-shrink-0">auto_awesome</span>
+                            <span class="text-[14.5px] font-bold text-gdark truncate">TripTaste AI 추천 전략</span>
+                        </div>
+                        <span id="current-dest-pill" class="text-[12px] font-bold bg-white text-gblue px-2.5 py-0.5 rounded-full border border-blue-100 truncate max-w-[155px] flex-shrink-0">
+                            🇯🇵 일본 · 오사카
+                        </span>
+                    </div>
+                    <p id="ai-strategy-text" class="text-[14px] text-[#3c4043] leading-relaxed"></p>
+                    <div id="active-keywords-summary" class="hidden mt-2.5 flex flex-wrap gap-1.5"></div>
+                </div>
+
+                <!-- Loading Skeleton -->
+                <div id="explore-skeleton" class="hidden space-y-3.5">
+                    <div class="bg-white rounded-2xl p-4 border border-gray-200 animate-pulse space-y-3">
+                        <div class="h-5 bg-gray-200 rounded w-2/3"></div>
+                        <div class="h-4 bg-gray-200 rounded w-1/2"></div>
+                        <div class="h-12 bg-blue-50/70 rounded-xl w-full"></div>
+                        <div class="h-11 bg-gray-100 rounded-xl w-full"></div>
+                    </div>
+                    <div class="bg-white rounded-2xl p-4 border border-gray-200 animate-pulse space-y-3">
+                        <div class="h-5 bg-gray-200 rounded w-3/4"></div>
+                        <div class="h-4 bg-gray-200 rounded w-2/5"></div>
+                        <div class="h-12 bg-blue-50/70 rounded-xl w-full"></div>
+                    </div>
+                </div>
+
+                <!-- Recommended Restaurants -->
+                <section id="restaurants-section">
+                    <div class="flex items-center justify-between mb-2.5 px-0.5">
+                        <h2 class="text-[16px] font-bold text-gdark flex items-center gap-2">
+                            <span class="w-3 h-3 rounded-full bg-gred inline-block"></span>
+                            <span>추천 맛집 & 메뉴</span>
+                            <span id="restaurant-visible-count" class="text-[14px] font-bold text-ggray">(4)</span>
+                        </h2>
+                        <span id="landmark-ref-label" class="text-[12.5px] font-medium text-ggray truncate max-w-[165px]">기준: 도톤보리 돈키호테</span>
+                    </div>
+                    <div id="restaurant-list" class="space-y-3.5"></div>
+                </section>
+
+                <!-- Nearby Attractions -->
+                <section id="attractions-section" class="pt-1 pb-6">
+                    <div class="flex items-center justify-between mb-2.5 px-0.5">
+                        <h2 class="text-[16px] font-bold text-gdark flex items-center gap-2">
+                            <span class="w-3 h-3 rounded-full bg-purple-600 inline-block"></span>
+                            <span>식후 근처 볼거리 (도보 10분)</span>
+                            <span id="attractions-count" class="text-[14px] font-bold text-ggray">(2)</span>
+                        </h2>
+                    </div>
+                    <div id="attractions-list" class="space-y-3.5"></div>
+                </section>
+            </div>
+
+            <!-- ==================== TAB 2: 내 식단 (My Meals) ==================== -->
+            <div id="tab-meals" class="tab-content hidden p-4 space-y-5">
+                <div class="bg-white rounded-2xl p-4 border border-gray-200 shadow-sm space-y-3.5">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-[16px] font-bold text-gdark flex items-center gap-1.5">
+                            <span class="material-symbols-rounded text-gblue text-[22px]">add_circle</span>
+                            <span>먹은 음식 기록하기</span>
+                        </h3>
+                        <span class="text-[12px] font-medium text-ggray">AI 검색 시 자동 반영</span>
+                    </div>
+
+                    <div class="flex flex-col sm:flex-row gap-2">
+                        <select id="meal-time-select" class="min-h-[44px] text-[14px] bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-gdark font-semibold focus:outline-none focus:border-gblue">
+                            <option value="어제 점심">어제 점심</option>
+                            <option value="어제 저녁" selected>어제 저녁</option>
+                            <option value="오늘 아침">오늘 아침</option>
+                            <option value="오늘 점심">오늘 점심</option>
+                            <option value="오늘 저녁">오늘 저녁</option>
+                        </select>
+                        <div class="flex gap-2 flex-1">
+                            <input
+                                id="meal-custom-input"
+                                type="text"
+                                placeholder="음식명 직접 입력 (예: 규카츠, 팟타이)"
+                                class="flex-1 min-h-[44px] text-[14.5px] bg-gray-50 border border-gray-200 rounded-xl px-3.5 py-2 focus:outline-none focus:bg-white focus:border-gblue"
+                            />
+                            <button id="meal-add-btn" type="button" class="min-h-[44px] px-4 bg-gblue hover:bg-blue-700 text-white text-[14px] font-bold rounded-xl transition-colors flex-shrink-0">
+                                추가
+                            </button>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="text-[12.5px] font-semibold text-ggray mb-2">원터치 빠른 기록:</div>
+                        <div id="quick-meal-chips" class="flex flex-wrap gap-2"></div>
+                    </div>
+                </div>
+
+                <div>
+                    <div class="flex items-center justify-between mb-2.5 px-0.5">
+                        <h3 class="text-[16px] font-bold text-gdark">최근 식사 타임라인</h3>
+                        <button id="clear-meals-btn" type="button" class="text-[13px] font-semibold text-ggray hover:text-gred px-2 py-1 rounded-lg">전체 삭제</button>
+                    </div>
+                    <div id="meal-timeline-list" class="space-y-2.5 pb-6"></div>
+                </div>
+            </div>
+
+            <!-- ==================== TAB 3: 찜 목록 (Bookmarks) ==================== -->
+            <div id="tab-bookmarks" class="tab-content hidden p-4 space-y-3.5">
+                <div class="flex items-center justify-between px-0.5">
+                    <h3 class="text-[16px] font-bold text-gdark">내가 찜한 맛집 & 볼거리</h3>
+                    <span class="text-[12.5px] text-ggray">탭하여 지도에서 확인</span>
+                </div>
+                <div id="saved-list" class="space-y-3 pb-6"></div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- ========================================================= -->
+    <!-- 5. MOBILE FIXED BOTTOM NAVIGATION BAR (64px + safe-area)  -->
+    <!-- ========================================================= -->
+    <nav
+        id="mobile-bottom-nav"
+        class="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-[1060] flex items-center justify-around px-2 shadow-[0_-2px_10px_rgba(0,0,0,0.06)]"
+    >
+        <button data-tab="explore" type="button" class="mobile-nav-btn flex-1 h-full flex flex-col items-center justify-center gap-0.5 text-gblue transition-colors">
+            <div class="nav-pill px-4 py-1 rounded-full bg-gblueLight transition-colors flex items-center justify-center">
+                <span class="material-symbols-rounded text-[22px] filled">explore</span>
+            </div>
+            <span class="text-[11.5px] font-bold">탐색</span>
+        </button>
+
+        <button data-tab="meals" type="button" class="mobile-nav-btn flex-1 h-full flex flex-col items-center justify-center gap-0.5 text-ggray transition-colors">
+            <div class="nav-pill px-4 py-1 rounded-full bg-transparent transition-colors flex items-center justify-center relative">
+                <span class="material-symbols-rounded text-[22px]">restaurant_menu</span>
+                <span class="meal-count-badge absolute -top-0.5 right-1 min-w-[18px] h-[18px] px-1 bg-gblue text-white text-[10px] font-bold rounded-full flex items-center justify-center">1</span>
+            </div>
+            <span class="text-[11.5px] font-semibold">내 식단</span>
+        </button>
+
+        <button data-tab="bookmarks" type="button" class="mobile-nav-btn flex-1 h-full flex flex-col items-center justify-center gap-0.5 text-ggray transition-colors">
+            <div class="nav-pill px-4 py-1 rounded-full bg-transparent transition-colors flex items-center justify-center relative">
+                <span class="material-symbols-rounded text-[22px]">favorite</span>
+                <span class="saved-count-badge absolute -top-0.5 right-1 min-w-[18px] h-[18px] px-1 bg-gred text-white text-[10px] font-bold rounded-full flex items-center justify-center">0</span>
+            </div>
+            <span class="text-[11.5px] font-semibold">찜 목록</span>
+        </button>
+    </nav>
+
+    <!-- ========================================================= -->
+    <!-- 6. MOBILE-FRIENDLY SNACKBAR TOAST (No alert/confirm)      -->
+    <!-- ========================================================= -->
+    <div
+        id="toast"
+        role="status"
+        aria-live="polite"
+        class="fixed bottom-[82px] md:bottom-6 left-1/2 -translate-x-1/2 z-[1200] bg-[#202124] text-white text-[13.5px] font-medium px-4 py-3 rounded-2xl shadow-gmaps-lg flex items-center gap-2.5 opacity-0 pointer-events-none transition-all duration-300 translate-y-3 max-w-[92vw]"
+    >
+        <span id="toast-icon" class="material-symbols-rounded text-[20px] text-blue-300 flex-shrink-0">info</span>
+        <span id="toast-msg" class="leading-snug">알림</span>
+    </div>
+
+    <!-- ========================================================= -->
+    <!-- APPLICATION LOGIC (Vercel /api/recommend + SVG Map)       -->
+    <!-- ========================================================= -->
+    <script>
+        // ============================================================
+        // 1. 58 GLOBAL TRAVEL DESTINATIONS FOR REAL-TIME AUTOCOMPLETE
+        // ============================================================
+        const GLOBAL_DESTINATIONS = [
+            // 일본 (기본 3.5+ 추천)
+            { flag: '🇯🇵', country: '일본', city: '오사카', aliases: 'japan osaka dotonbori 도톤보리 난바 우메다', defaultRating: 3.5 },
+            { flag: '🇯🇵', country: '일본', city: '도쿄', aliases: 'japan tokyo shibuya shinjuku ginza 시부야 신주쿠 긴자 아사쿠사', defaultRating: 3.5 },
+            { flag: '🇯🇵', country: '일본', city: '후쿠오카', aliases: 'japan fukuoka hakata tenjin 하카타 텐진', defaultRating: 3.5 },
+            { flag: '🇯🇵', country: '일본', city: '삿포로', aliases: 'japan sapporo hokkaido 스스키노 홋카이도', defaultRating: 3.5 },
+            { flag: '🇯🇵', country: '일본', city: '교토', aliases: 'japan kyoto gion 기온 가와라마치 아라시야마', defaultRating: 3.5 },
+            { flag: '🇯🇵', country: '일본', city: '오키나와', aliases: 'japan okinawa naha 나하 국제거리', defaultRating: 3.5 },
+            { flag: '🇯🇵', country: '일본', city: '나고야', aliases: 'japan nagoya 사카에', defaultRating: 3.5 },
+            { flag: '🇯🇵', country: '일본', city: '고베', aliases: 'japan kobe 산노미야', defaultRating: 3.5 },
+
+            // 유럽 (기본 4.0+ 추천)
+            { flag: '🇮🇹', country: '이탈리아', city: '로마', aliases: 'italy rome trevi colosseum 트레비 분수 콜로세움', defaultRating: 4.0 },
+            { flag: '🇮🇹', country: '이탈리아', city: '피렌체', aliases: 'italy florence firenze 두오모', defaultRating: 4.0 },
+            { flag: '🇮🇹', country: '이탈리아', city: '밀라노', aliases: 'italy milan milano', defaultRating: 4.0 },
+            { flag: '🇮🇹', country: '이탈리아', city: '베네치아', aliases: 'italy venice venezia 베니스', defaultRating: 4.0 },
+            { flag: '🇫🇷', country: '프랑스', city: '파리', aliases: 'france paris eiffel louvre 에펠탑 몽마르뜨 마레지구', defaultRating: 4.0 },
+            { flag: '🇫🇷', country: '프랑스', city: '니스', aliases: 'france nice 남프랑스', defaultRating: 4.0 },
+            { flag: '🇪🇸', country: '스페인', city: '바르셀로나', aliases: 'spain barcelona 가우디 사그라다 파밀리아', defaultRating: 4.0 },
+            { flag: '🇪🇸', country: '스페인', city: '마드리드', aliases: 'spain madrid 솔광장', defaultRating: 4.0 },
+            { flag: '🇪🇸', country: '스페인', city: '세비야', aliases: 'spain seville sevilla', defaultRating: 4.0 },
+            { flag: '🇬🇧', country: '영국', city: '런던', aliases: 'uk england london soho 소호 빅벤', defaultRating: 4.0 },
+            { flag: '🇬🇧', country: '영국', city: '에든버러', aliases: 'uk scotland edinburgh', defaultRating: 4.0 },
+            { flag: '🇨🇭', country: '스위스', city: '인터라켄', aliases: 'switzerland interlaken 융프라우', defaultRating: 4.0 },
+            { flag: '🇨🇭', country: '스위스', city: '취리히', aliases: 'switzerland zurich', defaultRating: 4.0 },
+            { flag: '🇨🇭', country: '스위스', city: '루체른', aliases: 'switzerland lucerne', defaultRating: 4.0 },
+            { flag: '🇨🇿', country: '체코', city: '프라하', aliases: 'czech prague 카를교 구시가지', defaultRating: 4.0 },
+            { flag: '🇦🇹', country: '오스트리아', city: '빈', aliases: 'austria vienna 비엔나', defaultRating: 4.0 },
+            { flag: '🇩🇪', country: '독일', city: '뮌헨', aliases: 'germany munich', defaultRating: 4.0 },
+            { flag: '🇩🇪', country: '독일', city: '베를린', aliases: 'germany berlin', defaultRating: 4.0 },
+            { flag: '🇵🇹', country: '포르투갈', city: '리스본', aliases: 'portugal lisbon', defaultRating: 4.0 },
+            { flag: '🇵🇹', country: '포르투갈', city: '포르투', aliases: 'portugal porto', defaultRating: 4.0 },
+            { flag: '🇳🇱', country: '네덜란드', city: '암스테르담', aliases: 'netherlands amsterdam', defaultRating: 4.0 },
+            { flag: '🇭🇺', country: '헝가리', city: '부다페스트', aliases: 'hungary budapest', defaultRating: 4.0 },
+            { flag: '🇹🇷', country: '튀르키예', city: '이스탄불', aliases: 'turkey turkiye istanbul 터키', defaultRating: 4.0 },
+
+            // 동남아시아
+            { flag: '🇹🇭', country: '태국', city: '방콕', aliases: 'thailand bangkok siam 아이콘시암 카오산로드 아속', defaultRating: 4.0 },
+            { flag: '🇹🇭', country: '태국', city: '치앙마이', aliases: 'thailand chiang mai 님만해민', defaultRating: 4.0 },
+            { flag: '🇹🇭', country: '태국', city: '푸켓', aliases: 'thailand phuket 빠통', defaultRating: 4.0 },
+            { flag: '🇻🇳', country: '베트남', city: '다낭', aliases: 'vietnam danang 한시장 미케비치', defaultRating: 4.0 },
+            { flag: '🇻🇳', country: '베트남', city: '호치민', aliases: 'vietnam ho chi minh 사이공', defaultRating: 4.0 },
+            { flag: '🇻🇳', country: '베트남', city: '하노이', aliases: 'vietnam hanoi 호안끼엠', defaultRating: 4.0 },
+            { flag: '🇻🇳', country: '베트남', city: '나트랑', aliases: 'vietnam nha trang 냐짱', defaultRating: 4.0 },
+            { flag: '🇸🇬', country: '싱가포르', city: '싱가포르', aliases: 'singapore marina bay 마리나베이 오차드', defaultRating: 4.0 },
+            { flag: '🇮🇩', country: '인도네시아', city: '발리', aliases: 'indonesia bali 우붓 스미냑 짱구', defaultRating: 4.0 },
+            { flag: '🇲🇾', country: '말레이시아', city: '쿠알라룸푸르', aliases: 'malaysia kuala lumpur kl', defaultRating: 4.0 },
+            { flag: '🇵🇭', country: '필리핀', city: '세부', aliases: 'philippines cebu 막탄', defaultRating: 4.0 },
+
+            // 중화권
+            { flag: '🇹🇼', country: '대만', city: '타이베이', aliases: 'taiwan taipei 시먼딩 융캉제 스린야시장', defaultRating: 4.0 },
+            { flag: '🇹🇼', country: '대만', city: '가오슝', aliases: 'taiwan kaohsiung', defaultRating: 4.0 },
+            { flag: '🇭🇰', country: '홍콩', city: '홍콩', aliases: 'hong kong 침사추이 센트럴 몽콕', defaultRating: 4.0 },
+            { flag: '🇲🇴', country: '마카오', city: '마카오', aliases: 'macau macao 코타이 세나도', defaultRating: 4.0 },
+
+            // 미주 & 오세아니아
+            { flag: '🇺🇸', country: '미국', city: '뉴욕', aliases: 'usa new york nyc 맨해튼 타임스퀘어 소호', defaultRating: 4.0 },
+            { flag: '🇺🇸', country: '미국', city: 'LA', aliases: 'usa los angeles 로스앤젤레스 할리우드 산타모니카', defaultRating: 4.0 },
+            { flag: '🇺🇸', country: '미국', city: '하와이 호놀룰루', aliases: 'usa hawaii honolulu 와이키키', defaultRating: 4.0 },
+            { flag: '🇺🇸', country: '미국', city: '샌프란시스코', aliases: 'usa san francisco', defaultRating: 4.0 },
+            { flag: '🇺🇸', country: '미국', city: '라스베이거스', aliases: 'usa las vegas 스트립', defaultRating: 4.0 },
+            { flag: '🇨🇦', country: '캐나다', city: '밴쿠버', aliases: 'canada vancouver', defaultRating: 4.0 },
+            { flag: '🇨🇦', country: '캐나다', city: '토론토', aliases: 'canada toronto', defaultRating: 4.0 },
+            { flag: '🇦🇺', country: '호주', city: '시드니', aliases: 'australia sydney 오페라하우스 달링하버', defaultRating: 4.0 },
+            { flag: '🇦🇺', country: '호주', city: '멜버른', aliases: 'australia melbourne', defaultRating: 4.0 },
+
+            // 대한민국
+            { flag: '🇰🇷', country: '한국', city: '서울', aliases: 'korea seoul 성수 홍대 명동 강남 익선동', defaultRating: 4.0 },
+            { flag: '🇰🇷', country: '한국', city: '부산', aliases: 'korea busan 해운대 광안리 서면 남포동', defaultRating: 4.0 },
+            { flag: '🇰🇷', country: '한국', city: '제주', aliases: 'korea jeju 애월 서귀포 함덕', defaultRating: 4.0 }
+        ];
+
+        const QUICK_KEYWORDS = [
+            { label: '#현지인맛집', value: '현지인맛집' },
+            { label: '#가성비', value: '가성비' },
+            { label: '#혼밥가능', value: '혼밥가능' },
+            { label: '#초밥', value: '초밥' },
+            { label: '#야끼니꾸', value: '야끼니꾸' },
+            { label: '#디저트', value: '디저트' },
+            { label: '#야경', value: '야경' }
+        ];
+
+        const QUICK_MEAL_PRESETS = [
+            { name: '라멘', tags: '면류 · 진한 국물' },
+            { name: '초밥', tags: '해산물 · 담백함' },
+            { name: '야끼니꾸', tags: '육류 · 구이' },
+            { name: '파스타', tags: '양식 · 면류' },
+            { name: '쌀국수', tags: '동남아 · 맑은 국물' },
+            { name: '카페', tags: '디저트 · 커피' }
+        ];
+
+        // ============================================================
+        // 2. INITIAL SAMPLE DATA (Exact /api/recommend Response Schema)
+        // ============================================================
+        const DESKTOP_BP = 768;
+        const STORAGE_KEYS = {
+            MEALS: 'triptaste_vercel_meals_v1',
+            SAVED: 'triptaste_vercel_saved_v1'
+        };
+
+        const INITIAL_RESPONSE_DATA = {
+            cityMeta: {
+                centerName: '도톤보리 돈키호테',
+                waterLabel: '도톤보리 강',
+                parkLabel: '나카노시마 공원',
+                stations: ['난바역', '닛폰바시역', '신사이바시역']
+            },
+            strategy: '어제 저녁에 진하고 기름진 돈코츠 라멘을 드셨네요! 오늘은 도톤보리 돈키호테 근처에서 속이 편안한 담백한 우동·회전초밥·신선한 카이센동과 깔끔한 와규 구이를 추천해 드립니다.',
+            restaurants: [
+                {
+                    id: 'osaka-r1',
+                    name: '도톤보리 이마이 본점',
+                    localName: '道頓堀 今井 本店',
+                    category: '전통 우동 · 일식',
+                    signatureMenu: '키츠네 우동 & 오야코동 세트',
+                    rating: 4.2,
+                    reviews: 2840,
+                    walkTime: '도보 4분',
+                    price: '1인 약 1,200~2,000엔',
+                    hours: '11:30~21:30 (수요일 휴무 · 회전율 빠름)',
+                    tip: '어제 드신 진한 돈코츠 라멘과 대조되는 70년 전통의 맑은 다시마 육수 우동으로, 현지인 단골 비중이 높습니다.',
+                    isOpen: true,
+                    x: 1120,
+                    y: 1580
+                },
+                {
+                    id: 'osaka-r2',
+                    name: '겐로쿠 스시 도톤보리점',
+                    localName: '元禄寿司 道頓堀店',
+                    category: '회전초밥 · 혼밥',
+                    signatureMenu: '참치 뱃살·구운 장어·제철 스시',
+                    rating: 3.9,
+                    reviews: 3410,
+                    walkTime: '도보 3분',
+                    price: '1인 약 1,500~2,500엔',
+                    hours: '11:00~22:30 (연중무휴 · 피크타임 15분 대기)',
+                    tip: '도톤보리 돈키호테에서 도보 3분 거리의 회전초밥 원조. 카운터석이 잘 되어 있어 혼밥과 가성비에 최적입니다.',
+                    isOpen: true,
+                    x: 1710,
+                    y: 1210
+                },
+                {
+                    id: 'osaka-r3',
+                    name: '마츠사카규 야끼니꾸 M 호젠지점',
+                    localName: '松阪牛焼肉 M 法善寺横丁店',
+                    category: '와규 야끼니꾸',
+                    signatureMenu: '마츠사카규 6종 모둠 런치',
+                    rating: 4.6,
+                    reviews: 1920,
+                    walkTime: '도보 5분',
+                    price: '1인 약 6,000~10,000엔',
+                    hours: '12:00~15:00 / 17:00~23:00 (브레이크타임 주의)',
+                    tip: '프라이빗한 좌석에서 깔끔하게 구워 먹는 최상급 흑모 와규. 여행 중 특별한 한 끼를 원할 때 추천합니다.',
+                    isOpen: true,
+                    x: 1680,
+                    y: 1740
+                },
+                {
+                    id: 'osaka-r4',
+                    name: '쿠로몬 마구로야 본점',
+                    localName: '黒門まぐろや 本店',
+                    category: '해산물 덮밥 · 로컬',
+                    signatureMenu: '생참치 3색 덮밥 (오토로·주토로·아카미)',
+                    rating: 4.3,
+                    reviews: 1450,
+                    walkTime: '도보 8분',
+                    price: '1인 약 1,800~3,500엔',
+                    hours: '09:00~17:30 (재료 소진 시 조기 마감)',
+                    tip: '기름진 음식 대신 신선한 생참치 덮밥으로 든든하고 깔끔하게 점심을 해결하기 좋은 로컬 맛집입니다.',
+                    isOpen: true,
+                    x: 1950,
+                    y: 1520
+                }
+            ],
+            attractions: [
+                {
+                    id: 'osaka-a1',
+                    name: '호젠지 요코초 골목',
+                    localName: '法善寺横丁',
+                    category: '전통 골목 · 산책',
+                    walkTime: '도보 4분',
+                    hours: '24시간 개방 (저녁 등불 점등 추천)',
+                    tip: '도톤보리의 화려함 바로 옆에 숨겨진 고즈넉한 돌바닥 골목과 이끼 낀 부동명왕상. 식후 소화 겸 산책하기 완벽합니다.',
+                    x: 1320,
+                    y: 1840
+                },
+                {
+                    id: 'osaka-a2',
+                    name: '에비스 타워 대관람차',
+                    localName: 'えびすタワー',
+                    category: '야경 · 쇼핑 스팟',
+                    walkTime: '도보 1분',
+                    hours: '11:00~22:00 (기상 상황에 따라 변동)',
+                    tip: '도톤보리 강변을 한눈에 내려다보는 세계 최초의 타원형 관람차. 탑승 후 돈키호테 쇼핑으로 바로 이어가기 좋습니다.',
+                    x: 1540,
+                    y: 1060
+                }
+            ]
+        };
+
+        // ============================================================
+        // 3. APPLICATION STATE & MAP CAMERA (0.3x ~ 3.0x FREE ZOOM)
+        // ============================================================
+        const state = {
+            selectedDest: { flag: '🇯🇵', country: '일본', city: '오사카' },
+            data: JSON.parse(JSON.stringify(INITIAL_RESPONSE_DATA)),
+            filters: {
+                minRating: 3.5,
+                openNow: true
+            },
+            lastSearchedKeywords: '',
+            activeTab: 'explore', // 'explore' | 'meals' | 'bookmarks'
+            selectedPlaceId: null,
+            isLoading: false,
+            isDarkMap: false,
+            sheetSnap: 'half', // 'collapsed' | 'half' | 'expanded'
+            desktopCollapsed: false,
+            meals: [],
+            saved: []
+        };
+
+        const mapCam = {
+            x: 0,
+            y: 0,
+            scale: 0.65,
+            minScale: 0.30,
+            maxScale: 3.00,
+            isDragging: false,
+            isPinching: false,
+            startClientX: 0,
+            startClientY: 0,
+            startCamX: 0,
+            startCamY: 0,
+            pinchStartDist: 0,
+            pinchStartScale: 1,
+            pinchStartMidX: 0,
+            pinchStartMidY: 0,
+            pinchStartCamX: 0,
+            pinchStartCamY: 0
+        };
+
+        // ============================================================
+        // 4. STORAGE, ESCAPE & TOAST HELPERS
+        // ============================================================
+        function loadLocalData() {
+            try {
+                const rawMeals = localStorage.getItem(STORAGE_KEYS.MEALS);
+                if (rawMeals) {
+                    state.meals = JSON.parse(rawMeals);
+                } else {
+                    state.meals = [
+                        {
+                            id: 'meal-init-1',
+                            name: '돈코츠 라멘',
+                            tags: '기름지고 진한 국물 · 면류',
+                            time: '어제 저녁'
+                        }
+                    ];
+                    saveMealsToStorage();
+                }
+
+                const rawSaved = localStorage.getItem(STORAGE_KEYS.SAVED);
+                if (rawSaved) {
+                    state.saved = JSON.parse(rawSaved);
+                }
+            } catch (e) {
+                console.error('localStorage load failed:', e);
+            }
+        }
+
+        function saveMealsToStorage() {
+            try { localStorage.setItem(STORAGE_KEYS.MEALS, JSON.stringify(state.meals)); } catch (e) {}
+        }
+
+        function saveSavedToStorage() {
+            try { localStorage.setItem(STORAGE_KEYS.SAVED, JSON.stringify(state.saved)); } catch (e) {}
+        }
+
+        let toastTimer = null;
+        function showToast(message, icon = 'info', duration = 3200) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-msg').textContent = message;
+            document.getElementById('toast-icon').textContent = icon;
+            toast.classList.remove('opacity-0', 'translate-y-3', 'pointer-events-none');
+            toast.classList.add('opacity-100', 'translate-y-0');
+
+            clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-3', 'pointer-events-none');
+                toast.classList.remove('opacity-100', 'translate-y-0');
+            }, duration);
+        }
+
+        function escapeHtml(str) {
+            if (str === null || str === undefined) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        function getBottomNavHeightPx() {
+            const nav = document.getElementById('mobile-bottom-nav');
+            return nav ? nav.getBoundingClientRect().height || 64 : 64;
+        }
+
+        // ============================================================
+        // 5. COUNTRY / CITY LIVE AUTOCOMPLETE ENGINE
+        // ============================================================
+        function getFormattedDest(dest) {
+            if (!dest) return '';
+            const flagPart = dest.flag ? `${dest.flag} ` : '🌍 ';
+            if (dest.country && dest.city && dest.country !== dest.city) {
+                return `${flagPart}${dest.country} · ${dest.city}`;
+            }
+            return `${flagPart}${dest.city || dest.country}`;
+        }
+
+        function getPlainLocationString(dest) {
+            if (!dest) return '일본 오사카';
+            if (dest.country && dest.city && dest.country !== dest.city) {
+                return `${dest.country} ${dest.city}`;
+            }
+            return dest.city || dest.country || '일본 오사카';
+        }
+
+        function setSelectedDestination(destObj, autoAdjustRating = true) {
+            state.selectedDest = {
+                flag: destObj.flag || '🌍',
+                country: destObj.country || '',
+                city: destObj.city || destObj.country || ''
+            };
+
+            const label = getFormattedDest(state.selectedDest);
+            document.getElementById('destination-input').value = label;
+
+            if (autoAdjustRating) {
+                const isJapan = state.selectedDest.country.includes('일본') || state.selectedDest.city.toLowerCase().includes('japan');
+                state.filters.minRating = destObj.defaultRating || (isJapan ? 3.5 : 4.0);
+                updateFilterChipsUI();
+            }
+
+            closeAutocomplete();
+            showToast(`여행지가 '${label}'(으)로 설정되었습니다.`, 'location_on', 2200);
+        }
+
+        function openAutocomplete(queryText = '') {
+            const dropdown = document.getElementById('autocomplete-dropdown');
+            const listEl = document.getElementById('autocomplete-list');
+            const headerEl = document.getElementById('autocomplete-header-label');
+
+            const rawQ = queryText.trim();
+            const cleanQ = rawQ.replace(/[·]/g, ' ').replace(/[\u{1F1E6}-\u{1F1FF}]{2}|🌍/gu, '').trim().toLowerCase();
+
+            let matches = [];
+            if (!cleanQ) {
+                headerEl.textContent = '인기 해외·국내 여행지 (국가 또는 도시 입력)';
+                matches = GLOBAL_DESTINATIONS.slice(0, 15);
+            } else {
+                const tokens = cleanQ.split(/\s+/).filter(Boolean);
+                matches = GLOBAL_DESTINATIONS.filter(item => {
+                    const haystack = `${item.country} ${item.city} ${item.aliases}`.toLowerCase();
+                    return tokens.every(t => haystack.includes(t));
+                });
+                headerEl.textContent = matches.length > 0
+                    ? `'${rawQ}' 관련 국가 · 도시 (${matches.length}곳)`
+                    : '목록에 없는 여행지 — 직접 설정할 수 있어요';
+            }
+
+            const htmlParts = [];
+            matches.forEach((item, idx) => {
+                htmlParts.push(`
+                    <button
+                        type="button"
+                        data-preset-idx="${idx}"
+                        class="ac-item w-full min-h-[48px] px-3.5 py-2.5 text-left hover:bg-gblueLight/60 active:bg-gblueLight flex items-center justify-between gap-2 transition-colors"
+                    >
+                        <div class="flex items-center gap-2.5 min-w-0">
+                            <span class="text-[20px] flex-shrink-0">${item.flag}</span>
+                            <div class="text-[14.5px] font-bold text-gdark truncate">${escapeHtml(item.country)} · ${escapeHtml(item.city)}</div>
+                        </div>
+                        <span class="text-[11.5px] font-semibold text-gblue bg-blue-50 px-2 py-0.5 rounded-full flex-shrink-0">⭐ ${item.defaultRating.toFixed(1)}+ 추천</span>
+                    </button>
+                `);
+            });
+
+            if (cleanQ.length >= 1) {
+                const displayCustom = rawQ.replace(/[\u{1F1E6}-\u{1F1FF}]{2}|🌍/gu, '').trim();
+                htmlParts.push(`
+                    <button
+                        type="button"
+                        id="ac-custom-btn"
+                        class="w-full min-h-[48px] px-3.5 py-2.5 text-left bg-blue-50/50 hover:bg-gblueLight flex items-center justify-between gap-2 transition-colors"
+                    >
+                        <div class="flex items-center gap-2.5 min-w-0">
+                            <span class="material-symbols-rounded text-gblue text-[20px] flex-shrink-0">add_location_alt</span>
+                            <div class="text-[14px] font-bold text-gblue truncate">'${escapeHtml(displayCustom)}' 직접 설정하기</div>
+                        </div>
+                        <span class="text-[11.5px] font-semibold text-ggray flex-shrink-0">직접 입력</span>
+                    </button>
+                `);
+            }
+
+            listEl.innerHTML = htmlParts.join('');
+            dropdown.classList.remove('hidden');
+
+            listEl.querySelectorAll('.ac-item').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const picked = matches[parseInt(btn.dataset.presetIdx, 10)];
+                    if (picked) {
+                        setSelectedDestination(picked, true);
+                        document.getElementById('keyword-input').focus();
+                    }
+                });
+            });
+
+            const customBtn = document.getElementById('ac-custom-btn');
+            if (customBtn) {
+                customBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const displayCustom = rawQ.replace(/[\u{1F1E6}-\u{1F1FF}]{2}|🌍/gu, '').trim();
+                    const parts = displayCustom.split(/\s+/);
+                    const customObj = parts.length >= 2
+                        ? { flag: '🌍', country: parts[0], city: parts.slice(1).join(' ') }
+                        : { flag: '🌍', country: displayCustom, city: displayCustom };
+                    setSelectedDestination(customObj, true);
+                    document.getElementById('keyword-input').focus();
+                });
+            }
+        }
+
+        function closeAutocomplete() {
+            document.getElementById('autocomplete-dropdown').classList.add('hidden');
+        }
+
+        // ============================================================
+        // 6. FILTER & QUICK KEYWORD CHIPS
+        // ============================================================
+        function updateFilterChipsUI() {
+            document.querySelectorAll('.rating-chip').forEach(btn => {
+                const val = parseFloat(btn.dataset.rating);
+                const active = state.filters.minRating === val;
+                btn.className = active
+                    ? 'rating-chip min-h-[36px] flex-shrink-0 flex items-center gap-1 px-3 py-1.5 rounded-full text-[13px] font-bold shadow-gmaps-chip border bg-gblue text-white border-gblue transition-colors'
+                    : 'rating-chip min-h-[36px] flex-shrink-0 flex items-center gap-1 px-3 py-1.5 rounded-full text-[13px] font-bold shadow-gmaps-chip border bg-white hover:bg-gray-50 text-gdark border-gray-200/90 transition-colors';
+            });
+
+            const openBtn = document.getElementById('open-now-btn');
+            openBtn.className = state.filters.openNow
+                ? 'min-h-[36px] flex-shrink-0 flex items-center gap-1 px-3 py-1.5 rounded-full text-[13px] font-bold shadow-gmaps-chip border bg-emerald-50 text-ggreen border-emerald-300 transition-colors'
+                : 'min-h-[36px] flex-shrink-0 flex items-center gap-1 px-3 py-1.5 rounded-full text-[13px] font-semibold shadow-gmaps-chip border bg-white hover:bg-gray-50 text-ggray border-gray-200/90 transition-colors';
+        }
+
+        function renderQuickKeywordChips() {
+            const container = document.getElementById('quick-keyword-chips');
+            const currentVal = document.getElementById('keyword-input').value;
+
+            container.innerHTML = QUICK_KEYWORDS.map(item => {
+                const isIncluded = currentVal.includes(item.value);
+                const cls = isIncluded
+                    ? 'bg-gblueLight text-gblue border-blue-300 font-bold'
+                    : 'bg-white hover:bg-gray-50 text-gdark border-gray-200/90 font-semibold';
+                return `
+                    <button
+                        type="button"
+                        data-kw="${escapeHtml(item.value)}"
+                        class="kw-chip min-h-[36px] flex-shrink-0 text-[13px] px-3 py-1.5 rounded-full shadow-gmaps-chip border transition-colors ${cls}"
+                    >
+                        ${item.label}
+                    </button>
+                `;
+            }).join('');
+
+            container.querySelectorAll('.kw-chip').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const kw = btn.dataset.kw;
+                    const input = document.getElementById('keyword-input');
+                    let tokens = input.value.split(/[,\s]+/).map(t => t.trim()).filter(Boolean);
+                    if (tokens.includes(kw)) {
+                        tokens = tokens.filter(t => t !== kw);
+                    } else {
+                        tokens.push(kw);
+                    }
+                    input.value = tokens.join(', ');
+                    renderQuickKeywordChips();
+                });
+            });
+        }
+
+        // ============================================================
+        // 7. VECTOR MAP ENGINE (PAN, WHEEL ZOOM, 2-FINGER PINCH ZOOM)
+        // ============================================================
+        function applyMapTransform(smooth = false) {
+            const stage = document.getElementById('map-stage');
+            stage.classList.toggle('smooth-transition', smooth);
+            stage.style.transform = `translate3d(${mapCam.x}px, ${mapCam.y}px, 0) scale(${mapCam.scale})`;
+
+            const invScale = Math.max(0.42, Math.min(2.85, 1 / Math.pow(mapCam.scale, 0.88)));
+            const popupScale = Math.max(0.36, Math.min(3.2, 1 / mapCam.scale));
+            stage.style.setProperty('--inv-scale', invScale.toFixed(3));
+            stage.style.setProperty('--popup-scale', popupScale.toFixed(3));
+
+            document.getElementById('zoom-badge').textContent = `${Math.round(mapCam.scale * 100)}%`;
+        }
+
+        function getVisibleCenterOffset() {
+            const vw = window.innerWidth;
+            const vh = window.innerHeight;
+            const isDesktop = vw >= DESKTOP_BP;
+
+            if (isDesktop) {
+                const leftOccupied = state.desktopCollapsed ? 0 : 400;
+                return {
+                    visibleCenterX: leftOccupied + (vw - leftOccupied) / 2,
+                    visibleCenterY: vh / 2
+                };
+            }
+
+            const sheetH = getSheetHeightPx(state.sheetSnap);
+            const navH = getBottomNavHeightPx();
+            const topSafe = 165;
+            const bottomSafe = navH + Math.min(sheetH, vh * 0.54);
+            const exposedCenterY = topSafe + Math.max(70, (vh - topSafe - bottomSafe) / 2);
+            return {
+                visibleCenterX: vw / 2,
+                visibleCenterY: Math.min(vh * 0.44, exposedCenterY)
+            };
+        }
+
+        function centerMapOnWorld(worldX, worldY, targetScale = null, smooth = true) {
+            const { visibleCenterX, visibleCenterY } = getVisibleCenterOffset();
+            if (targetScale !== null) {
+                mapCam.scale = Math.max(mapCam.minScale, Math.min(mapCam.maxScale, targetScale));
+            }
+            mapCam.x = visibleCenterX - worldX * mapCam.scale;
+            mapCam.y = visibleCenterY - worldY * mapCam.scale;
+            applyMapTransform(smooth);
+        }
+
+        function resetMapView(smooth = true) {
+            const vw = window.innerWidth;
+            const defaultScale = vw < DESKTOP_BP ? 0.52 : 0.72;
+            centerMapOnWorld(1400, 1400, defaultScale, smooth);
+        }
+
+        function zoomMapByFactor(factor, anchorX = null, anchorY = null, smooth = true) {
+            const { visibleCenterX, visibleCenterY } = getVisibleCenterOffset();
+            const cx = anchorX !== null ? anchorX : visibleCenterX;
+            const cy = anchorY !== null ? anchorY : visibleCenterY;
+
+            const prevScale = mapCam.scale;
+            const nextScale = Math.max(mapCam.minScale, Math.min(mapCam.maxScale, prevScale * factor));
+            if (Math.abs(nextScale - prevScale) < 0.001) return;
+
+            const ratio = nextScale / prevScale;
+            mapCam.x = cx - (cx - mapCam.x) * ratio;
+            mapCam.y = cy - (cy - mapCam.y) * ratio;
+            mapCam.scale = nextScale;
+            applyMapTransform(smooth);
+        }
+
+        function initMapInteractions() {
+            const viewport = document.getElementById('map-viewport');
+            const stage = document.getElementById('map-stage');
+
+            // Desktop Mouse Drag
+            viewport.addEventListener('mousedown', (e) => {
+                if (e.target.closest('.map-pin-anchor') || e.target.closest('.map-landmark-anchor') || e.target.closest('#map-popup-wrapper')) return;
+                mapCam.isDragging = true;
+                mapCam.startClientX = e.clientX;
+                mapCam.startClientY = e.clientY;
+                mapCam.startCamX = mapCam.x;
+                mapCam.startCamY = mapCam.y;
+                viewport.classList.add('is-dragging');
+                stage.classList.remove('smooth-transition');
+            });
+
+            window.addEventListener('mousemove', (e) => {
+                if (!mapCam.isDragging) return;
+                mapCam.x = mapCam.startCamX + (e.clientX - mapCam.startClientX);
+                mapCam.y = mapCam.startCamY + (e.clientY - mapCam.startClientY);
+                applyMapTransform(false);
+            });
+
+            window.addEventListener('mouseup', () => {
+                if (!mapCam.isDragging) return;
+                mapCam.isDragging = false;
+                viewport.classList.remove('is-dragging');
+            });
+
+            // Mobile 1-Finger Pan & 2-Finger Pinch-to-Zoom
+            viewport.addEventListener('touchstart', (e) => {
+                if (e.target.closest('#map-popup-wrapper')) return;
+                stage.classList.remove('smooth-transition');
+
+                if (e.touches.length === 2) {
+                    mapCam.isDragging = false;
+                    mapCam.isPinching = true;
+                    const t1 = e.touches[0];
+                    const t2 = e.touches[1];
+                    mapCam.pinchStartDist = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY) || 1;
+                    mapCam.pinchStartScale = mapCam.scale;
+                    mapCam.pinchStartMidX = (t1.clientX + t2.clientX) / 2;
+                    mapCam.pinchStartMidY = (t1.clientY + t2.clientY) / 2;
+                    mapCam.pinchStartCamX = mapCam.x;
+                    mapCam.pinchStartCamY = mapCam.y;
+                } else if (e.touches.length === 1) {
+                    if (e.target.closest('.map-pin-anchor') || e.target.closest('.map-landmark-anchor')) return;
+                    mapCam.isPinching = false;
+                    mapCam.isDragging = true;
+                    mapCam.startClientX = e.touches[0].clientX;
+                    mapCam.startClientY = e.touches[0].clientY;
+                    mapCam.startCamX = mapCam.x;
+                    mapCam.startCamY = mapCam.y;
+                }
+            }, { passive: true });
+
+            viewport.addEventListener('touchmove', (e) => {
+                if (mapCam.isPinching && e.touches.length === 2) {
+                    e.preventDefault();
+                    const t1 = e.touches[0];
+                    const t2 = e.touches[1];
+                    const dist = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY) || 1;
+                    const midX = (t1.clientX + t2.clientX) / 2;
+                    const midY = (t1.clientY + t2.clientY) / 2;
+
+                    const rawScale = mapCam.pinchStartScale * (dist / mapCam.pinchStartDist);
+                    const nextScale = Math.max(mapCam.minScale, Math.min(mapCam.maxScale, rawScale));
+                    const ratio = nextScale / mapCam.pinchStartScale;
+
+                    mapCam.scale = nextScale;
+                    mapCam.x = midX - (mapCam.pinchStartMidX - mapCam.pinchStartCamX) * ratio;
+                    mapCam.y = midY - (mapCam.pinchStartMidY - mapCam.pinchStartCamY) * ratio;
+                    applyMapTransform(false);
+                } else if (mapCam.isDragging && e.touches.length === 1) {
+                    e.preventDefault();
+                    mapCam.x = mapCam.startCamX + (e.touches[0].clientX - mapCam.startClientX);
+                    mapCam.y = mapCam.startCamY + (e.touches[0].clientY - mapCam.startClientY);
+                    applyMapTransform(false);
+                }
+            }, { passive: false });
+
+            viewport.addEventListener('touchend', (e) => {
+                if (e.touches.length < 2) mapCam.isPinching = false;
+                if (e.touches.length === 1) {
+                    mapCam.isDragging = true;
+                    mapCam.startClientX = e.touches[0].clientX;
+                    mapCam.startClientY = e.touches[0].clientY;
+                    mapCam.startCamX = mapCam.x;
+                    mapCam.startCamY = mapCam.y;
+                } else if (e.touches.length === 0) {
+                    mapCam.isDragging = false;
+                }
+            });
+
+            // Mouse Wheel Zoom
+            viewport.addEventListener('wheel', (e) => {
+                e.preventDefault();
+                const factor = e.deltaY < 0 ? 1.16 : 0.86;
+                const rect = viewport.getBoundingClientRect();
+                zoomMapByFactor(factor, e.clientX - rect.left, e.clientY - rect.top, false);
+            }, { passive: false });
+
+            // Tap empty map to dismiss popups
+            viewport.addEventListener('click', (e) => {
+                if (Math.hypot(e.clientX - mapCam.startClientX, e.clientY - mapCam.startClientY) > 8) return;
+                if (!e.target.closest('.map-pin-anchor') && !e.target.closest('#map-popup-wrapper')) {
+                    closeMapPopup();
+                }
+                closeAutocomplete();
+            });
+        }
+
+        function updateMapLabelsSVG() {
+            const meta = state.data.cityMeta || INITIAL_RESPONSE_DATA.cityMeta;
+            document.getElementById('svg-label-water').textContent = meta.waterLabel || '중앙 수변';
+            document.getElementById('svg-label-park').textContent = `🌳 ${meta.parkLabel || '중앙 공원'}`;
+
+            const stations = Array.isArray(meta.stations) && meta.stations.length > 0
+                ? meta.stations
+                : ['중앙역', '동부역', '북부역'];
+            for (let i = 0; i < 3; i++) {
+                const el = document.getElementById(`svg-label-station-${i}`);
+                if (el) el.textContent = stations[i] || stations[0] || '';
+            }
+        }
+
+        function toggleMapTheme() {
+            state.isDarkMap = !state.isDarkMap;
+            document.getElementById('map-viewport').classList.toggle('map-dark', state.isDarkMap);
+            const icon = document.getElementById('theme-toggle-icon');
+            icon.textContent = state.isDarkMap ? 'light_mode' : 'dark_mode';
+            icon.className = state.isDarkMap
+                ? 'material-symbols-rounded text-[22px] text-amber-500'
+                : 'material-symbols-rounded text-[22px] text-indigo-600';
+            showToast(state.isDarkMap ? '야간(다크) 지도로 전환했습니다.' : '기본 지도로 전환했습니다.', state.isDarkMap ? 'dark_mode' : 'light_mode', 2000);
+        }
+
+        // ============================================================
+        // 8. MOBILE 3-STAGE DRAGGABLE BOTTOM SHEET LOGIC
+        // ============================================================
+        function getSheetHeightPx(snapName) {
+            const vh = window.innerHeight;
+            if (snapName === 'collapsed') return Math.max(100, Math.round(vh * 0.14));
+            if (snapName === 'half') return Math.round(vh * 0.48);
+            return Math.round(vh * 0.82);
+        }
+
+        function updateMapControlsPosition(sheetHeightPx) {
+            const stack = document.getElementById('map-controls-stack');
+            if (window.innerWidth >= DESKTOP_BP) {
+                stack.style.bottom = '24px';
+                stack.style.opacity = '1';
+                stack.style.pointerEvents = 'auto';
+                return;
+            }
+            const vh = window.innerHeight;
+            const navH = getBottomNavHeightPx();
+            const totalBottom = navH + sheetHeightPx + 14;
+            if (sheetHeightPx > vh * 0.60) {
+                stack.style.opacity = '0';
+                stack.style.pointerEvents = 'none';
+            } else {
+                stack.style.bottom = `${Math.min(totalBottom, vh - 270)}px`;
+                stack.style.opacity = '1';
+                stack.style.pointerEvents = 'auto';
+            }
+        }
+
+        function setSheetSnap(snapName, animate = true) {
+            state.sheetSnap = snapName;
+            const panel = document.getElementById('side-panel');
+
+            document.querySelectorAll('.snap-btn').forEach(btn => {
+                const active = btn.dataset.snap === snapName;
+                btn.className = active
+                    ? 'snap-btn px-2.5 py-1.5 text-[12px] font-bold rounded-full bg-gblueLight text-gblue transition-colors'
+                    : 'snap-btn px-2.5 py-1.5 text-[12px] font-bold rounded-full bg-gray-100 text-ggray hover:bg-gray-200 transition-colors';
+            });
+
+            if (window.innerWidth >= DESKTOP_BP) {
+                updateMapControlsPosition(0);
+                return;
+            }
+
+            const targetH = getSheetHeightPx(snapName);
+            panel.classList.toggle('sheet-animating', animate);
+            panel.style.height = `${targetH}px`;
+            updateMapControlsPosition(targetH);
+        }
+
+        function initBottomSheetDrag() {
+            const dragZone = document.getElementById('sheet-drag-zone');
+            const panel = document.getElementById('side-panel');
+
+            let dragging = false;
+            let startY = 0;
+            let startHeight = 0;
+            let currentHeight = 0;
+            let startTime = 0;
+
+            function onStart(clientY, target) {
+                if (window.innerWidth >= DESKTOP_BP) return;
+                if (target.closest('.snap-btn')) return;
+                dragging = true;
+                startY = clientY;
+                startHeight = panel.getBoundingClientRect().height;
+                currentHeight = startHeight;
+                startTime = Date.now();
+                panel.classList.remove('sheet-animating');
+            }
+
+            function onMove(clientY) {
+                if (!dragging) return;
+                const deltaY = startY - clientY;
+                const minH = 92;
+                const maxH = Math.round(window.innerHeight * 0.84);
+                currentHeight = Math.max(minH, Math.min(maxH, startHeight + deltaY));
+                panel.style.height = `${currentHeight}px`;
+                updateMapControlsPosition(currentHeight);
+            }
+
+            function onEnd() {
+                if (!dragging) return;
+                dragging = false;
+
+                const movedDist = Math.abs(currentHeight - startHeight);
+                const elapsed = Math.max(1, Date.now() - startTime);
+                const velocity = (currentHeight - startHeight) / elapsed;
+
+                if (movedDist < 8) {
+                    const order = ['collapsed', 'half', 'expanded'];
+                    const next = order[(order.indexOf(state.sheetSnap) + 1) % order.length];
+                    setSheetSnap(next, true);
+                    return;
+                }
+
+                if (velocity > 0.42) {
+                    setSheetSnap(state.sheetSnap === 'collapsed' ? 'half' : 'expanded', true);
+                    return;
+                }
+                if (velocity < -0.42) {
+                    setSheetSnap(state.sheetSnap === 'expanded' ? 'half' : 'collapsed', true);
+                    return;
+                }
+
+                const snapPoints = [
+                    { name: 'collapsed', h: getSheetHeightPx('collapsed') },
+                    { name: 'half', h: getSheetHeightPx('half') },
+                    { name: 'expanded', h: getSheetHeightPx('expanded') }
+                ];
+                snapPoints.sort((a, b) => Math.abs(a.h - currentHeight) - Math.abs(b.h - currentHeight));
+                setSheetSnap(snapPoints[0].name, true);
+            }
+
+            dragZone.addEventListener('touchstart', (e) => {
+                if (e.touches.length === 1) onStart(e.touches[0].clientY, e.target);
+            }, { passive: true });
+            window.addEventListener('touchmove', (e) => {
+                if (dragging && e.touches.length === 1) {
+                    e.preventDefault();
+                    onMove(e.touches[0].clientY);
+                }
+            }, { passive: false });
+            window.addEventListener('touchend', onEnd);
+
+            dragZone.addEventListener('mousedown', (e) => onStart(e.clientY, e.target));
+            window.addEventListener('mousemove', (e) => { if (dragging) onMove(e.clientY); });
+            window.addEventListener('mouseup', onEnd);
+
+            document.querySelectorAll('.snap-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    setSheetSnap(btn.dataset.snap, true);
+                });
+            });
+        }
+
+        // ============================================================
+        // 9. MAP PINS & FLOATING MINI-CARD POPUP
+        // ============================================================
+        function buildGoogleMapsDeepLink(localName, name) {
+            const loc = getPlainLocationString(state.selectedDest);
+            const q = encodeURIComponent(`${localName || name} ${loc}`.trim());
+            return `https://www.google.com/maps/search/?api=1&query=${q}`;
+        }
+
+        function getFilteredRestaurants() {
+            return (state.data.restaurants || []).filter(r => {
+                if (Number(r.rating || 0) < state.filters.minRating) return false;
+                if (state.filters.openNow && r.isOpen === false) return false;
+                return true;
+            });
+        }
+
+        function renderMapPins() {
+            const layer = document.getElementById('map-pins-layer');
+            const htmlParts = [];
+            const centerTitle = state.data.cityMeta?.centerName || state.selectedDest.city || '중심지';
+
+            // 1. Pulsing Blue Center Landmark Dot (1400, 1400)
+            htmlParts.push(`
+                <div
+                    class="map-landmark-anchor flex flex-col items-center"
+                    style="left: 1400px; top: 1400px;"
+                    title="기준 위치: ${escapeHtml(centerTitle)}"
+                >
+                    <div class="relative flex items-center justify-center w-9 h-9">
+                        <span class="blue-dot-pulse absolute w-7 h-7 rounded-full bg-gblue/45"></span>
+                        <span class="relative w-4 h-4 rounded-full bg-gblue border-[2.5px] border-white shadow-md"></span>
+                    </div>
+                    <div class="mt-0.5 px-2.5 py-0.5 bg-gblue text-white text-[12px] font-bold rounded-full shadow-md whitespace-nowrap">
+                        📍 ${escapeHtml(centerTitle)}
+                    </div>
+                </div>
+            `);
+
+            // 2. Restaurant Teardrop Pins with Star Rating Badge & Name Pill
+            getFilteredRestaurants().forEach(r => {
+                const selected = state.selectedPlaceId === r.id;
+                const shortName = r.name.length > 10 ? r.name.slice(0, 10) + '…' : r.name;
+                htmlParts.push(`
+                    <div
+                        data-pin-id="${escapeHtml(r.id)}"
+                        class="map-pin-anchor ${selected ? 'is-selected' : ''}"
+                        style="left: ${r.x}px; top: ${r.y}px;"
+                    >
+                        <div class="map-pin-body flex flex-col items-center">
+                            <div class="mb-[-6px] z-10 px-2 py-0.5 rounded-full bg-white text-gdark text-[11.5px] font-bold shadow border ${selected ? 'border-gblue ring-2 ring-blue-200' : 'border-gray-200'} flex items-center gap-0.5">
+                                <span class="text-gyellow text-[12px] leading-none">★</span>
+                                <span>${Number(r.rating || 0).toFixed(1)}</span>
+                            </div>
+                            <div class="relative flex items-center justify-center w-[40px] h-[48px]">
+                                <svg viewBox="0 0 36 46" width="40" height="48" style="filter: drop-shadow(0 3px 5px rgba(0,0,0,0.32));">
+                                    <path d="M18 2C9.2 2 2 9.2 2 18c0 11.8 14.5 24.4 15.4 25.2a1 1 0 0 0 1.2 0C19.5 42.4 34 29.8 34 18 34 9.2 26.8 2 18 2z" fill="${selected ? '#d93025' : '#ea4335'}" stroke="#ffffff" stroke-width="2.4"/>
+                                </svg>
+                                <span class="material-symbols-rounded text-white text-[18px] absolute top-[10px]">restaurant</span>
+                            </div>
+                            <div class="mt-[-2px] px-2 py-0.5 bg-white/95 text-gdark text-[11.5px] font-bold rounded-md shadow-sm border border-gray-200 whitespace-nowrap">
+                                ${escapeHtml(shortName)}
+                            </div>
+                        </div>
+                    </div>
+                `);
+            });
+
+            // 3. Purple Attraction Teardrop Pins
+            (state.data.attractions || []).forEach(a => {
+                const selected = state.selectedPlaceId === a.id;
+                const shortName = a.name.length > 10 ? a.name.slice(0, 10) + '…' : a.name;
+                htmlParts.push(`
+                    <div
+                        data-pin-id="${escapeHtml(a.id)}"
+                        class="map-pin-anchor ${selected ? 'is-selected' : ''}"
+                        style="left: ${a.x}px; top: ${a.y}px;"
+                    >
+                        <div class="map-pin-body flex flex-col items-center">
+                            <div class="relative flex items-center justify-center w-[38px] h-[46px]">
+                                <svg viewBox="0 0 36 46" width="38" height="46" style="filter: drop-shadow(0 3px 5px rgba(0,0,0,0.28));">
+                                    <path d="M18 2C9.2 2 2 9.2 2 18c0 11.8 14.5 24.4 15.4 25.2a1 1 0 0 0 1.2 0C19.5 42.4 34 29.8 34 18 34 9.2 26.8 2 18 2z" fill="${selected ? '#5e35b1' : '#7b1fa2'}" stroke="#ffffff" stroke-width="2.4"/>
+                                </svg>
+                                <span class="material-symbols-rounded text-white text-[17px] absolute top-[9px]">photo_camera</span>
+                            </div>
+                            <div class="mt-[-2px] px-2 py-0.5 bg-white/95 text-purple-900 text-[11.5px] font-bold rounded-md shadow-sm border border-purple-200 whitespace-nowrap">
+                                ${escapeHtml(shortName)}
+                            </div>
+                        </div>
+                    </div>
+                `);
+            });
+
+            layer.innerHTML = htmlParts.join('');
+
+            layer.querySelectorAll('.map-pin-anchor').forEach(pinEl => {
+                pinEl.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    selectPlace(pinEl.dataset.pinId, true, true);
+                });
+            });
+        }
+
+        function openMapPopup(item, itemType) {
+            const wrapper = document.getElementById('map-popup-wrapper');
+            wrapper.style.left = `${item.x}px`;
+            wrapper.style.top = `${item.y}px`;
+            const gmapsUrl = buildGoogleMapsDeepLink(item.localName, item.name);
+            const isRest = itemType === 'restaurant';
+
+            wrapper.innerHTML = `
+                <div class="w-[276px] bg-white rounded-2xl shadow-gmaps-lg border border-gray-200 overflow-hidden text-left">
+                    <div class="px-4 pt-3.5 pb-2.5 border-b border-gray-100 relative">
+                        <button id="popup-close-btn" type="button" aria-label="닫기" class="absolute top-2.5 right-2.5 w-7 h-7 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-ggray">
+                            <span class="material-symbols-rounded text-[17px]">close</span>
+                        </button>
+                        <div class="text-[12px] font-bold ${isRest ? 'text-gred' : 'text-purple-700'} mb-0.5">
+                            ${escapeHtml(item.category || (isRest ? '맛집' : '볼거리'))} · ${escapeHtml(item.walkTime || '도보 5분')}
+                        </div>
+                        <div class="text-[16px] font-bold text-gdark pr-7 leading-snug">${escapeHtml(item.name)}</div>
+                        <div class="text-[12.5px] text-ggray truncate">${escapeHtml(item.localName || '')}</div>
+                        ${isRest ? `
+                            <div class="flex items-center gap-1.5 mt-1.5 text-[13px]">
+                                <span class="font-bold text-gdark">${Number(item.rating || 0).toFixed(1)}</span>
+                                <span class="text-gyellow">★</span>
+                                <span class="text-ggray">(${Number(item.reviews || 0).toLocaleString()})</span>
+                                ${item.price ? `<span class="text-gray-300">·</span><span class="text-ggray truncate">${escapeHtml(item.price)}</span>` : ''}
+                            </div>
+                        ` : ''}
+                    </div>
+                    <div class="px-4 py-3 bg-gray-50/90 space-y-2.5">
+                        ${isRest && item.signatureMenu ? `
+                            <div class="text-[12.5px] font-bold text-gblue bg-blue-50/90 px-2.5 py-1.5 rounded-lg leading-snug">
+                                🍽️ ${escapeHtml(item.signatureMenu)}
+                            </div>
+                        ` : ''}
+                        <p class="text-[13px] text-[#3c4043] leading-relaxed">${escapeHtml(item.tip || '')}</p>
+                        <a href="${gmapsUrl}" target="_blank" rel="noopener noreferrer" class="w-full min-h-[40px] py-2 px-3 ${isRest ? 'bg-gblue hover:bg-blue-700' : 'bg-purple-600 hover:bg-purple-700'} text-white text-[13px] font-bold rounded-xl flex items-center justify-center gap-1.5 transition-colors">
+                            <span class="material-symbols-rounded text-[17px]">directions</span>
+                            <span>구글 지도로 열기</span>
+                        </a>
+                    </div>
+                </div>
+            `;
+
+            wrapper.classList.remove('hidden');
+            document.getElementById('popup-close-btn').addEventListener('click', (e) => {
+                e.stopPropagation();
+                closeMapPopup();
+            });
+        }
+
+        function closeMapPopup() {
+            document.getElementById('map-popup-wrapper').classList.add('hidden');
+            state.selectedPlaceId = null;
+            renderMapPins();
+            renderRestaurantList();
+            renderAttractionsList();
+        }
+
+        function selectPlace(id, panMap = true, scrollSidebar = false) {
+            state.selectedPlaceId = id;
+            const rest = (state.data.restaurants || []).find(r => r.id === id);
+            const attr = (state.data.attractions || []).find(a => a.id === id);
+            const target = rest || attr;
+            if (!target) return;
+
+            const itemType = rest ? 'restaurant' : 'attraction';
+            renderMapPins();
+            renderRestaurantList();
+            renderAttractionsList();
+            openMapPopup(target, itemType);
+
+            if (panMap) {
+                const zoomTarget = Math.max(mapCam.scale, 0.85);
+                centerMapOnWorld(target.x, target.y, zoomTarget, true);
+            }
+
+            if (scrollSidebar) {
+                if (state.activeTab !== 'explore') switchTab('explore', false);
+                setTimeout(() => {
+                    const cardEl = document.querySelector(`[data-card-id="${id}"]`);
+                    if (cardEl) cardEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }, 70);
+            }
+        }
+
+        // ============================================================
+        // 10. CARDS & LIST RENDERING (Mobile High Legibility)
+        // ============================================================
+        function isItemSaved(id) {
+            return state.saved.some(s => s.id === id);
+        }
+
+        function toggleSaveItem(item, itemType) {
+            const idx = state.saved.findIndex(s => s.id === item.id);
+            if (idx >= 0) {
+                state.saved.splice(idx, 1);
+                showToast(`'${item.name}' 찜 목록에서 삭제됨`, 'heart_minus', 2000);
+            } else {
+                const destLabel = getFormattedDest(state.selectedDest);
+                state.saved.unshift({
+                    ...item,
+                    itemType,
+                    destinationLabel: destLabel,
+                    savedAt: Date.now()
+                });
+                showToast(`'${item.name}' 찜 목록에 저장됨`, 'favorite', 2000);
+            }
+            saveSavedToStorage();
+            renderRestaurantList();
+            renderAttractionsList();
+            renderBookmarksTab();
+            updateBadges();
+        }
+
+        function markVisitedAsMeal(restaurant) {
+            const hr = new Date().getHours();
+            let timeLabel = '오늘 점심';
+            if (hr < 11) timeLabel = '오늘 아침';
+            else if (hr >= 17) timeLabel = '오늘 저녁';
+
+            const dishName = restaurant.signatureMenu
+                ? restaurant.signatureMenu.split(',')[0].trim()
+                : restaurant.category;
+            addMealRecord(`${dishName} (${restaurant.name})`, restaurant.category || '식당 방문', timeLabel);
+            showToast(`먹었어요 기록 완료! '${dishName}'`, 'check_circle', 2400);
+        }
+
+        function renderAIBanner() {
+            const destLabel = getFormattedDest(state.selectedDest);
+            document.getElementById('current-dest-pill').textContent = destLabel;
+            document.getElementById('mobile-sheet-title').textContent = destLabel;
+            document.getElementById('ai-strategy-text').textContent = state.data.strategy || '';
+            document.getElementById('landmark-ref-label').textContent = `기준: ${state.data.cityMeta?.centerName || state.selectedDest.city || ''}`;
+
+            const kwBox = document.getElementById('active-keywords-summary');
+            if (state.lastSearchedKeywords) {
+                const tags = state.lastSearchedKeywords.split(/[,\s]+/).filter(Boolean);
+                kwBox.innerHTML = tags.map(t => `<span class="text-[11.5px] font-bold text-gblue bg-white border border-blue-200 px-2.5 py-0.5 rounded-full">#${escapeHtml(t.replace(/^#/, ''))}</span>`).join('');
+                kwBox.classList.remove('hidden');
+            } else {
+                kwBox.classList.add('hidden');
+            }
+        }
+
+        function renderRestaurantList() {
+            const container = document.getElementById('restaurant-list');
+            const filtered = getFilteredRestaurants();
+            document.getElementById('restaurant-visible-count').textContent = `(${filtered.length})`;
+            updateMobileSummary();
+
+            if (filtered.length === 0) {
+                container.innerHTML = `
+                    <div class="bg-white rounded-2xl p-6 border border-gray-200 text-center space-y-2.5">
+                        <span class="material-symbols-rounded text-gray-300 text-[38px]">search_off</span>
+                        <div class="text-[15px] font-bold text-gdark">현재 필터 조건에 맞는 맛집이 없습니다</div>
+                        <p class="text-[13.5px] text-ggray">별점 기준을 낮추거나 영업중 필터를 해제해 보세요.</p>
+                        <button id="reset-filters-inline" type="button" class="min-h-[42px] px-4 py-2 bg-gblueLight text-gblue text-[13.5px] font-bold rounded-full hover:bg-blue-100">
+                            필터 완화하기
+                        </button>
+                    </div>
+                `;
+                document.getElementById('reset-filters-inline')?.addEventListener('click', () => {
+                    state.filters.minRating = 3.5;
+                    state.filters.openNow = false;
+                    updateFilterChipsUI();
+                    renderRestaurantList();
+                    renderMapPins();
+                });
+                return;
+            }
+
+            container.innerHTML = filtered.map(r => {
+                const selected = state.selectedPlaceId === r.id;
+                const saved = isItemSaved(r.id);
+                const gmapsUrl = buildGoogleMapsDeepLink(r.localName, r.name);
+
+                return `
+                    <article
+                        data-card-id="${escapeHtml(r.id)}"
+                        class="bg-white rounded-2xl p-4 border transition-all ${selected ? 'border-gblue ring-2 ring-blue-100 shadow-md' : 'border-gray-200/90 shadow-sm'}"
+                    >
+                        <!-- Title & Walk Time -->
+                        <div class="flex items-start justify-between gap-2">
+                            <div data-focus-id="${escapeHtml(r.id)}" class="focus-map-trigger min-w-0 cursor-pointer flex-1">
+                                <h3 class="text-[16.5px] font-bold text-gdark leading-snug">${escapeHtml(r.name)}</h3>
+                                <div class="text-[13px] text-ggray truncate mt-0.5">${escapeHtml(r.localName || '')}</div>
+                            </div>
+                            <span class="px-2.5 py-1 rounded-full bg-gblueLight text-gblue text-[12px] font-bold flex items-center gap-0.5 flex-shrink-0">
+                                <span class="material-symbols-rounded text-[15px]">directions_walk</span>
+                                ${escapeHtml(r.walkTime || '도보 5분')}
+                            </span>
+                        </div>
+
+                        <!-- Rating, Reviews, Category, Price -->
+                        <div class="flex items-center flex-wrap gap-x-2 gap-y-1 mt-2 text-[14px]">
+                            <span class="font-bold text-gdark flex items-center gap-0.5">
+                                <span class="material-symbols-rounded text-gyellow text-[17px] filled">star</span>
+                                ${Number(r.rating || 0).toFixed(1)}
+                            </span>
+                            <span class="text-ggray text-[13px]">(${Number(r.reviews || 0).toLocaleString()})</span>
+                            <span class="text-gray-300">·</span>
+                            <span class="text-ggray text-[13.5px] font-medium">${escapeHtml(r.category || '')}</span>
+                            ${r.price ? `<span class="text-gray-300">·</span><span class="text-ggray text-[13.5px]">${escapeHtml(r.price)}</span>` : ''}
+                        </div>
+
+                        <!-- Highlighted Signature Menu Pill -->
+                        ${r.signatureMenu ? `
+                            <div class="mt-3 p-3 bg-blue-50/75 rounded-xl border border-blue-200/80">
+                                <div class="flex items-center gap-1.5 mb-1">
+                                    <span class="px-2 py-0.5 rounded-md bg-gblue text-white text-[11px] font-bold">대표 메뉴</span>
+                                    <span class="text-[12px] font-semibold text-gblue">AI 추천</span>
+                                </div>
+                                <div class="text-[14px] font-bold text-gdark leading-snug">${escapeHtml(r.signatureMenu)}</div>
+                            </div>
+                        ` : ''}
+
+                        <!-- Tip & Hours -->
+                        <div class="mt-2.5 space-y-2">
+                            <p class="text-[14px] text-[#3c4043] leading-relaxed">${escapeHtml(r.tip || '')}</p>
+                            ${r.hours ? `
+                                <div class="text-[12.5px] font-medium text-amber-800 bg-amber-50/80 px-2.5 py-1.5 rounded-lg flex items-center gap-1.5">
+                                    <span class="material-symbols-rounded text-[16px] flex-shrink-0">schedule</span>
+                                    <span>${escapeHtml(r.hours)}</span>
+                                </div>
+                            ` : ''}
+                        </div>
+
+                        <!-- 44px Touch-Friendly Action Buttons -->
+                        <div class="mt-3.5 flex items-center gap-2">
+                            <a
+                                href="${gmapsUrl}"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                class="flex-1 min-h-[44px] px-3 bg-gblue hover:bg-blue-700 active:scale-[0.98] text-white text-[13.5px] font-bold rounded-xl flex items-center justify-center gap-1 transition-all"
+                            >
+                                <span>🗺️ 구글 지도</span>
+                            </a>
+                            <button
+                                type="button"
+                                data-visit-id="${escapeHtml(r.id)}"
+                                class="visit-btn flex-1 min-h-[44px] px-3 bg-emerald-50 hover:bg-emerald-100 active:scale-[0.98] text-ggreen border border-emerald-200 text-[13.5px] font-bold rounded-xl flex items-center justify-center gap-1 transition-all"
+                            >
+                                <span>🍽️ 먹었어요</span>
+                            </button>
+                            <button
+                                type="button"
+                                data-save-id="${escapeHtml(r.id)}"
+                                aria-label="찜하기"
+                                class="save-rest-btn min-w-[44px] min-h-[44px] rounded-xl border flex items-center justify-center transition-all active:scale-95 ${saved ? 'bg-red-50 border-red-200 text-gred' : 'bg-gray-50 border-gray-200 text-gray-500 hover:bg-gray-100'}"
+                            >
+                                <span class="material-symbols-rounded text-[22px] ${saved ? 'filled' : ''}">favorite</span>
+                            </button>
+                        </div>
+                    </article>
+                `;
+            }).join('');
+
+            container.querySelectorAll('.focus-map-trigger').forEach(el => {
+                el.addEventListener('click', () => {
+                    selectPlace(el.dataset.focusId, true, false);
+                    if (window.innerWidth < DESKTOP_BP) setSheetSnap('collapsed', true);
+                });
+            });
+
+            container.querySelectorAll('.save-rest-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const item = state.data.restaurants.find(x => x.id === btn.dataset.saveId);
+                    if (item) toggleSaveItem(item, 'restaurant');
+                });
+            });
+
+            container.querySelectorAll('.visit-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const item = state.data.restaurants.find(x => x.id === btn.dataset.visitId);
+                    if (item) markVisitedAsMeal(item);
+                });
+            });
+        }
+
+        function renderAttractionsList() {
+            const container = document.getElementById('attractions-list');
+            const spots = state.data.attractions || [];
+            document.getElementById('attractions-count').textContent = `(${spots.length})`;
+            updateMobileSummary();
+
+            if (spots.length === 0) {
+                container.innerHTML = `<div class="text-[13.5px] text-ggray text-center py-4">근처 볼거리 정보가 없습니다.</div>`;
+                return;
+            }
+
+            container.innerHTML = spots.map(a => {
+                const selected = state.selectedPlaceId === a.id;
+                const saved = isItemSaved(a.id);
+                const gmapsUrl = buildGoogleMapsDeepLink(a.localName, a.name);
+
+                return `
+                    <article
+                        data-card-id="${escapeHtml(a.id)}"
+                        class="bg-white rounded-2xl p-4 border transition-all ${selected ? 'border-purple-600 ring-2 ring-purple-100 shadow-md' : 'border-gray-200/90 shadow-sm'}"
+                    >
+                        <div class="flex items-start justify-between gap-2">
+                            <div data-focus-id="${escapeHtml(a.id)}" class="focus-attr-trigger min-w-0 cursor-pointer flex-1">
+                                <div class="text-[12.5px] font-bold text-purple-700 mb-0.5">${escapeHtml(a.category || '볼거리')} · ${escapeHtml(a.walkTime || '도보 5분')}</div>
+                                <h3 class="text-[16px] font-bold text-gdark leading-snug">${escapeHtml(a.name)}</h3>
+                                <div class="text-[13px] text-ggray mt-0.5">${escapeHtml(a.localName || '')}</div>
+                            </div>
+                            <button
+                                type="button"
+                                data-save-id="${escapeHtml(a.id)}"
+                                aria-label="볼거리 찜하기"
+                                class="save-attr-btn min-w-[44px] min-h-[44px] rounded-xl border flex items-center justify-center transition-all ${saved ? 'bg-red-50 border-red-200 text-gred' : 'bg-gray-50 border-gray-200 text-gray-500'}"
+                            >
+                                <span class="material-symbols-rounded text-[21px] ${saved ? 'filled' : ''}">favorite</span>
+                            </button>
+                        </div>
+
+                        <p class="text-[14px] text-[#3c4043] leading-relaxed mt-2.5">${escapeHtml(a.tip || '')}</p>
+
+                        <div class="text-[12.5px] font-medium text-ggray flex items-center gap-1.5 mt-2">
+                            <span class="material-symbols-rounded text-[16px]">schedule</span>
+                            <span>${escapeHtml(a.hours || '상시 개방')}</span>
+                        </div>
+
+                        <div class="mt-3.5 grid grid-cols-2 gap-2">
+                            <button
+                                type="button"
+                                data-focus-id="${escapeHtml(a.id)}"
+                                class="focus-attr-btn min-h-[44px] px-3 bg-purple-50 hover:bg-purple-100 text-purple-700 text-[13.5px] font-bold rounded-xl flex items-center justify-center gap-1.5 transition-colors"
+                            >
+                                <span class="material-symbols-rounded text-[18px]">location_on</span>
+                                <span>지도 보기</span>
+                            </button>
+                            <a
+                                href="${gmapsUrl}"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                class="min-h-[44px] px-3 bg-gray-100 hover:bg-gray-200 text-gdark text-[13.5px] font-bold rounded-xl flex items-center justify-center gap-1.5 transition-colors"
+                            >
+                                <span>🗺️ 구글 지도</span>
+                            </a>
+                        </div>
+                    </article>
+                `;
+            }).join('');
+
+            container.querySelectorAll('.focus-attr-btn, .focus-attr-trigger').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    selectPlace(btn.dataset.focusId, true, false);
+                    if (window.innerWidth < DESKTOP_BP) setSheetSnap('collapsed', true);
+                });
+            });
+
+            container.querySelectorAll('.save-attr-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const item = state.data.attractions.find(x => x.id === btn.dataset.saveId);
+                    if (item) toggleSaveItem(item, 'attraction');
+                });
+            });
+        }
+
+        // ============================================================
+        // 11. MY MEALS & BOOKMARKS TABS
+        // ============================================================
+        function renderQuickMealChips() {
+            const container = document.getElementById('quick-meal-chips');
+            container.innerHTML = QUICK_MEAL_PRESETS.map((preset, idx) => `
+                <button
+                    type="button"
+                    data-preset-idx="${idx}"
+                    class="quick-meal-btn min-h-[38px] text-[13.5px] font-semibold bg-gray-100 hover:bg-gblueLight hover:text-gblue text-gdark px-3.5 py-1.5 rounded-full transition-colors"
+                >
+                    + ${escapeHtml(preset.name)}
+                </button>
+            `).join('');
+
+            container.querySelectorAll('.quick-meal-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const preset = QUICK_MEAL_PRESETS[parseInt(btn.dataset.presetIdx, 10)];
+                    const timeLabel = document.getElementById('meal-time-select').value;
+                    if (preset) {
+                        addMealRecord(preset.name, preset.tags, timeLabel);
+                        showToast(`'${timeLabel} - ${preset.name}' 기록됨`, 'restaurant', 2000);
+                    }
+                });
+            });
+        }
+
+        function addMealRecord(name, tags, time) {
+            const trimmed = (name || '').trim();
+            if (!trimmed) return;
+            state.meals.unshift({
+                id: 'meal-' + Date.now() + '-' + Math.random().toString(36).slice(2, 5),
+                name: trimmed,
+                tags: tags || '직접 입력',
+                time: time || '오늘'
+            });
+            saveMealsToStorage();
+            renderMealTimeline();
+            updateBadges();
+        }
+
+        function renderMealTimeline() {
+            const container = document.getElementById('meal-timeline-list');
+            if (state.meals.length === 0) {
+                container.innerHTML = `
+                    <div class="bg-white rounded-2xl p-6 border border-gray-200 text-center space-y-2">
+                        <span class="material-symbols-rounded text-gray-300 text-[38px]">no_meals</span>
+                        <div class="text-[15px] font-bold text-gdark">기록된 식사가 없습니다</div>
+                        <p class="text-[13.5px] text-ggray">먹은 음식을 추가하면 AI 검색 시 겹치지 않는 메뉴를 추천해 드립니다.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = state.meals.map(m => `
+                <div class="bg-white rounded-2xl p-3.5 border border-gray-200/90 flex items-center justify-between gap-2 shadow-sm">
+                    <div class="flex items-center gap-2.5 min-w-0">
+                        <span class="text-[12px] font-bold bg-gblueLight text-gblue px-2.5 py-1 rounded-lg flex-shrink-0">${escapeHtml(m.time)}</span>
+                        <div class="min-w-0">
+                            <div class="text-[14.5px] font-bold text-gdark truncate">${escapeHtml(m.name)}</div>
+                            ${m.tags ? `<div class="text-[12px] text-ggray truncate">${escapeHtml(m.tags)}</div>` : ''}
+                        </div>
+                    </div>
+                    <button type="button" data-del-meal="${escapeHtml(m.id)}" aria-label="식사 삭제" class="del-meal-btn min-w-[40px] min-h-[40px] flex items-center justify-center text-gray-400 hover:text-gred rounded-full hover:bg-red-50 transition-colors">
+                        <span class="material-symbols-rounded text-[20px]">delete</span>
+                    </button>
+                </div>
+            `).join('');
+
+            container.querySelectorAll('.del-meal-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    state.meals = state.meals.filter(m => m.id !== btn.dataset.delMeal);
+                    saveMealsToStorage();
+                    renderMealTimeline();
+                    updateBadges();
+                    showToast('식단 기록을 삭제했습니다.', 'delete', 2000);
+                });
+            });
+        }
+
+        function renderBookmarksTab() {
+            const container = document.getElementById('saved-list');
+            if (state.saved.length === 0) {
+                container.innerHTML = `
+                    <div class="bg-white rounded-2xl p-6 border border-gray-200 text-center space-y-2">
+                        <span class="material-symbols-rounded text-gray-300 text-[38px]">favorite_border</span>
+                        <div class="text-[15px] font-bold text-gdark">찜한 장소가 없습니다</div>
+                        <p class="text-[13.5px] text-ggray">맛집이나 볼거리 카드의 하트(❤️)를 눌러 저장해 보세요.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = state.saved.map(item => {
+                const isRest = item.itemType === 'restaurant';
+                const gmapsUrl = buildGoogleMapsDeepLink(item.localName, item.name);
+                return `
+                    <div data-saved-id="${escapeHtml(item.id)}" class="saved-card bg-white rounded-2xl p-4 border border-gray-200/90 hover:border-gblue cursor-pointer transition-all shadow-sm">
+                        <div class="flex items-start justify-between gap-2">
+                            <div class="min-w-0">
+                                <div class="flex items-center gap-1.5 mb-1">
+                                    <span class="text-[11.5px] font-bold px-2 py-0.5 rounded-md ${isRest ? 'bg-red-50 text-gred' : 'bg-purple-50 text-purple-700'}">
+                                        ${isRest ? '맛집' : '볼거리'}
+                                    </span>
+                                    <span class="text-[12.5px] text-ggray truncate">${escapeHtml(item.destinationLabel || '')}</span>
+                                </div>
+                                <h4 class="text-[16px] font-bold text-gdark truncate">${escapeHtml(item.name)}</h4>
+                                <div class="text-[13px] text-ggray truncate">${escapeHtml(item.localName || '')}</div>
+                            </div>
+                            <button type="button" data-remove-saved="${escapeHtml(item.id)}" aria-label="찜 해제" class="remove-saved-btn min-w-[40px] min-h-[40px] flex items-center justify-center text-gred hover:bg-red-50 rounded-full">
+                                <span class="material-symbols-rounded text-[22px] filled">favorite</span>
+                            </button>
+                        </div>
+                        <div class="mt-2.5 flex items-center justify-between text-[13.5px]">
+                            <span class="text-ggray">
+                                ${isRest && item.rating ? `<strong class="text-gdark">${Number(item.rating).toFixed(1)}</strong> ★ · ${escapeHtml(item.category || '')}` : escapeHtml(item.category || '볼거리')}
+                            </span>
+                            <a href="${gmapsUrl}" target="_blank" rel="noopener noreferrer" class="stop-prop text-gblue font-bold hover:underline flex items-center gap-1 py-1">
+                                <span>구글 지도</span>
+                                <span class="material-symbols-rounded text-[16px]">open_in_new</span>
+                            </a>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            container.querySelectorAll('.saved-card').forEach(card => {
+                card.addEventListener('click', (e) => {
+                    if (e.target.closest('.stop-prop') || e.target.closest('.remove-saved-btn')) return;
+                    const id = card.dataset.savedId;
+                    const existsOnMap = [...(state.data.restaurants || []), ...(state.data.attractions || [])].some(x => x.id === id);
+                    if (existsOnMap) {
+                        selectPlace(id, true, false);
+                        if (window.innerWidth < DESKTOP_BP) setSheetSnap('collapsed', true);
+                    } else {
+                        showToast('다른 도시의 장소입니다. 구글 지도 링크로 열어보세요.', 'map', 2500);
+                    }
+                });
+            });
+
+            container.querySelectorAll('.remove-saved-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const item = state.saved.find(s => s.id === btn.dataset.removeSaved);
+                    if (item) toggleSaveItem(item, item.itemType);
+                });
+            });
+        }
+
+        function updateBadges() {
+            document.querySelectorAll('.meal-count-badge').forEach(el => {
+                el.textContent = state.meals.length;
+            });
+            document.querySelectorAll('.saved-count-badge').forEach(el => {
+                el.textContent = state.saved.length;
+            });
+        }
+
+        function updateMobileSummary() {
+            const rCount = getFilteredRestaurants().length;
+            const aCount = (state.data.attractions || []).length;
+            document.getElementById('mobile-sheet-summary').textContent = `추천 맛집 ${rCount}곳 · 근처 볼거리 ${aCount}곳`;
+        }
+
+        // ============================================================
+        // 12. VERCEL SERVERLESS BACKEND INTEGRATION (POST /api/recommend)
+        // ============================================================
+        async function runBackendSearch() {
+            if (state.isLoading) return;
+            closeAutocomplete();
+
+            // Sync destination if user typed directly without clicking dropdown
+            const rawDestInput = document.getElementById('destination-input').value.trim();
+            const cleanDestInput = rawDestInput.replace(/[\u{1F1E6}-\u{1F1FF}]{2}|🌍/gu, '').replace(/[·]/g, ' ').trim();
+            if (cleanDestInput && !getFormattedDest(state.selectedDest).includes(cleanDestInput.split(' ')[0])) {
+                const matchedPreset = GLOBAL_DESTINATIONS.find(d =>
+                    `${d.country} ${d.city}`.includes(cleanDestInput) || cleanDestInput.includes(d.city)
+                );
+                if (matchedPreset) {
+                    state.selectedDest = { flag: matchedPreset.flag, country: matchedPreset.country, city: matchedPreset.city };
+                } else {
+                    const parts = cleanDestInput.split(/\s+/);
+                    state.selectedDest = parts.length >= 2
+                        ? { flag: '🌍', country: parts[0], city: parts.slice(1).join(' ') }
+                        : { flag: '🌍', country: cleanDestInput, city: cleanDestInput };
+                }
+            }
+
+            const locationStr = getPlainLocationString(state.selectedDest);
+            const keywords = document.getElementById('keyword-input').value.trim();
+            state.lastSearchedKeywords = keywords;
+
+            const requestPayload = {
+                location: locationStr,
+                keywords: keywords,
+                minRating: state.filters.minRating,
+                openNow: state.filters.openNow,
+                meals: state.meals.slice(0, 8).map(m => ({
+                    name: m.name,
+                    tags: m.tags || '',
+                    time: m.time || ''
+                }))
+            };
+
+            setLoading(true);
+            switchTab('explore', true);
+
+            try {
+                const response = await fetch('/api/recommend', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(requestPayload)
+                });
+
+                // Specific HTTP status error handling
+                if (!response.ok) {
+                    let serverErrMsg = '';
+                    try {
+                        const errJson = await response.json();
+                        serverErrMsg = errJson.error || '';
+                    } catch (_) {}
+
+                    if (response.status === 429) {
+                        showToast(serverErrMsg || '요청이 너무 많습니다. 1분 뒤에 다시 시도해 주세요.', 'hourglass_top', 4200);
+                        return;
+                    }
+                    if (response.status === 404) {
+                        showToast('Vercel에 api/recommend.js와 함께 배포하면 /api/recommend AI 검색이 자동으로 활성화됩니다.', 'cloud_upload', 5200);
+                        return;
+                    }
+                    if (response.status === 500) {
+                        showToast(serverErrMsg || '서버 오류: Vercel 환경변수에 GEMINI_API_KEY가 설정되어 있는지 확인해 주세요.', 'vpn_key', 4800);
+                        return;
+                    }
+                    showToast(serverErrMsg || `검색 중 오류가 발생했습니다. (HTTP ${response.status})`, 'error', 4000);
+                    return;
+                }
+
+                const data = await response.json();
+                if (!data || !Array.isArray(data.restaurants) || data.restaurants.length === 0) {
+                    showToast('조건에 맞는 추천 결과를 찾지 못했습니다. 키워드를 바꿔 보세요.', 'search_off', 3600);
+                    return;
+                }
+
+                // Normalize coordinates cleanly within 2800x2800 map bounds
+                const ts = Date.now();
+                const clamp = (v, min, max) => Math.max(min, Math.min(max, Math.round(Number(v) || 1400)));
+
+                const normalizedData = {
+                    cityMeta: {
+                        centerName: data.cityMeta?.centerName || state.selectedDest.city || locationStr,
+                        waterLabel: data.cityMeta?.waterLabel || '중앙 강',
+                        parkLabel: data.cityMeta?.parkLabel || '중앙 공원',
+                        stations: Array.isArray(data.cityMeta?.stations) ? data.cityMeta.stations : ['중앙역', '동부역', '북부역']
+                    },
+                    strategy: data.strategy || `${locationStr} 맞춤 맛집과 식후 볼거리를 추천합니다.`,
+                    restaurants: data.restaurants.map((r, i) => ({
+                        id: r.id ? `${r.id}-${ts}` : `r-${ts}-${i}`,
+                        name: r.name || '추천 식당',
+                        localName: r.localName || '',
+                        category: r.category || '맛집',
+                        signatureMenu: r.signatureMenu || '',
+                        rating: Number(r.rating) || 4.0,
+                        reviews: Number(r.reviews) || 100,
+                        walkTime: r.walkTime || '도보 5분',
+                        price: r.price || '',
+                        hours: r.hours || '',
+                        tip: r.tip || '',
+                        isOpen: r.isOpen !== false,
+                        x: clamp(r.x, 700, 2100),
+                        y: clamp(r.y, 700, 2100)
+                    })),
+                    attractions: (Array.isArray(data.attractions) ? data.attractions : []).map((a, i) => ({
+                        id: a.id ? `${a.id}-${ts}` : `a-${ts}-${i}`,
+                        name: a.name || '근처 볼거리',
+                        localName: a.localName || '',
+                        category: a.category || '볼거리',
+                        walkTime: a.walkTime || '도보 6분',
+                        hours: a.hours || '상시 개방',
+                        tip: a.tip || '',
+                        x: clamp(a.x, 700, 2100),
+                        y: clamp(a.y, 700, 2100)
+                    }))
+                };
+
+                state.data = normalizedData;
+                state.selectedPlaceId = null;
+                document.getElementById('map-popup-wrapper').classList.add('hidden');
+
+                updateMapLabelsSVG();
+                renderAIBanner();
+                renderRestaurantList();
+                renderAttractionsList();
+                renderMapPins();
+                resetMapView(true);
+
+                if (window.innerWidth < DESKTOP_BP) {
+                    setSheetSnap('half', true);
+                }
+
+                showToast(`${locationStr} 맛집 ${normalizedData.restaurants.length}곳과 볼거리 ${normalizedData.attractions.length}곳을 찾았습니다!`, 'auto_awesome', 3200);
+            } catch (err) {
+                console.error('/api/recommend Fetch Error:', err);
+                showToast('네트워크 연결을 확인하거나 Vercel 배포 상태를 점검해 주세요.', 'wifi_off', 4200);
+            } finally {
+                setLoading(false);
+            }
+        }
+
+        function setLoading(loading) {
+            state.isLoading = loading;
+            document.getElementById('loading-bar-container').classList.toggle('hidden', !loading);
+            document.getElementById('explore-skeleton').classList.toggle('hidden', !loading);
+            document.getElementById('restaurants-section').classList.toggle('opacity-40', loading);
+            document.getElementById('attractions-section').classList.toggle('opacity-40', loading);
+
+            const btn = document.getElementById('search-submit-btn');
+            btn.disabled = loading;
+            btn.innerHTML = loading
+                ? `<span class="material-symbols-rounded text-[18px] animate-spin">progress_activity</span><span>검색중</span>`
+                : `<span class="material-symbols-rounded text-[18px]">search</span><span>검색하기</span>`;
+        }
+
+        // ============================================================
+        // 13. TAB SWITCHING & EVENT BINDINGS
+        // ============================================================
+        function switchTab(tabName, expandSheetOnMobile = true) {
+            state.activeTab = tabName;
+
+            document.querySelectorAll('.desktop-tab').forEach(tab => {
+                const active = tab.dataset.tab === tabName;
+                tab.classList.toggle('text-gblue', active);
+                tab.classList.toggle('border-gblue', active);
+                tab.classList.toggle('font-bold', active);
+                tab.classList.toggle('text-ggray', !active);
+                tab.classList.toggle('border-transparent', !active);
+                tab.classList.toggle('font-medium', !active);
+            });
+
+            document.querySelectorAll('.mobile-nav-btn').forEach(btn => {
+                const active = btn.dataset.tab === tabName;
+                btn.classList.toggle('text-gblue', active);
+                btn.classList.toggle('text-ggray', !active);
+                const pill = btn.querySelector('.nav-pill');
+                const icon = btn.querySelector('.material-symbols-rounded');
+                const label = btn.querySelector('span:last-child');
+                pill.classList.toggle('bg-gblueLight', active);
+                pill.classList.toggle('bg-transparent', !active);
+                icon.classList.toggle('filled', active);
+                label.classList.toggle('font-bold', active);
+                label.classList.toggle('font-semibold', !active);
+            });
+
+            document.querySelectorAll('.tab-content').forEach(el => {
+                el.classList.toggle('hidden', el.id !== `tab-${tabName}`);
+            });
+
+            if (expandSheetOnMobile && window.innerWidth < DESKTOP_BP && state.sheetSnap === 'collapsed') {
+                setSheetSnap('half', true);
+            }
+        }
+
+        function bindEvents() {
+            const destInput = document.getElementById('destination-input');
+            const keywordInput = document.getElementById('keyword-input');
+
+            // Autocomplete events
+            destInput.addEventListener('focus', () => {
+                const isPreformatted = destInput.value === getFormattedDest(state.selectedDest);
+                openAutocomplete(isPreformatted ? '' : destInput.value);
+            });
+            destInput.addEventListener('input', () => openAutocomplete(destInput.value));
+            destInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    const firstItem = document.querySelector('#autocomplete-list .ac-item') || document.getElementById('ac-custom-btn');
+                    if (firstItem) firstItem.click();
+                } else if (e.key === 'Escape') {
+                    closeAutocomplete();
+                }
+            });
+
+            document.getElementById('dest-clear-btn').addEventListener('click', (e) => {
+                e.stopPropagation();
+                destInput.value = '';
+                destInput.focus();
+                openAutocomplete('');
+            });
+
+            document.getElementById('autocomplete-close-btn').addEventListener('click', (e) => {
+                e.stopPropagation();
+                closeAutocomplete();
+            });
+
+            // Keyword Input & "검색하기" Submit
+            keywordInput.addEventListener('input', renderQuickKeywordChips);
+            keywordInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    runBackendSearch();
+                }
+            });
+            document.getElementById('search-submit-btn').addEventListener('click', runBackendSearch);
+
+            // Rating Filter Chips (3.5+ / 4.0+ / 4.3+)
+            document.querySelectorAll('.rating-chip').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    state.filters.minRating = parseFloat(btn.dataset.rating);
+                    updateFilterChipsUI();
+                    renderRestaurantList();
+                    renderMapPins();
+                });
+            });
+
+            // Open Now Toggle
+            document.getElementById('open-now-btn').addEventListener('click', () => {
+                state.filters.openNow = !state.filters.openNow;
+                updateFilterChipsUI();
+                renderRestaurantList();
+                renderMapPins();
+            });
+
+            // Tab Switchers
+            document.querySelectorAll('.desktop-tab, .mobile-nav-btn').forEach(btn => {
+                btn.addEventListener('click', () => switchTab(btn.dataset.tab, true));
+            });
+
+            // Desktop Sidebar Collapse
+            document.getElementById('desktop-collapse-btn').addEventListener('click', () => {
+                state.desktopCollapsed = !state.desktopCollapsed;
+                document.getElementById('side-panel').classList.toggle('desktop-collapsed', state.desktopCollapsed);
+                document.getElementById('desktop-collapse-icon').textContent = state.desktopCollapsed ? 'chevron_right' : 'chevron_left';
+            });
+
+            // My Meals Form
+            document.getElementById('meal-add-btn').addEventListener('click', () => {
+                const input = document.getElementById('meal-custom-input');
+                const timeLabel = document.getElementById('meal-time-select').value;
+                if (input.value.trim()) {
+                    addMealRecord(input.value.trim(), '직접 입력', timeLabel);
+                    showToast(`'${timeLabel} - ${input.value.trim()}' 기록됨`, 'restaurant', 2000);
+                    input.value = '';
+                }
+            });
+            document.getElementById('meal-custom-input').addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    document.getElementById('meal-add-btn').click();
+                }
+            });
+            document.getElementById('clear-meals-btn').addEventListener('click', () => {
+                state.meals = [];
+                saveMealsToStorage();
+                renderMealTimeline();
+                updateBadges();
+                showToast('식단 기록을 모두 삭제했습니다.', 'delete_sweep', 2000);
+            });
+
+            // Map Controls
+            document.getElementById('theme-toggle-btn').addEventListener('click', toggleMapTheme);
+            document.getElementById('recenter-btn').addEventListener('click', () => resetMapView(true));
+            document.getElementById('zoom-in-btn').addEventListener('click', () => zoomMapByFactor(1.32, null, null, true));
+            document.getElementById('zoom-out-btn').addEventListener('click', () => zoomMapByFactor(0.75, null, null, true));
+
+            // Dismiss Autocomplete on outside click
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('#destination-input') && !e.target.closest('#autocomplete-dropdown') && !e.target.closest('#dest-clear-btn')) {
+                    closeAutocomplete();
+                }
+            });
+
+            window.addEventListener('resize', () => {
+                setSheetSnap(state.sheetSnap, false);
+                resetMapView(false);
+            });
+        }
+
+        // Bootstrap on Window Load
+        window.addEventListener('load', () => {
+            loadLocalData();
+            initMapInteractions();
+            initBottomSheetDrag();
+
+            document.getElementById('destination-input').value = getFormattedDest(state.selectedDest);
+
+            updateFilterChipsUI();
+            renderQuickKeywordChips();
+            renderQuickMealChips();
+            updateMapLabelsSVG();
+            renderAIBanner();
+            renderRestaurantList();
+            renderAttractionsList();
+            renderMapPins();
+            renderMealTimeline();
+            renderBookmarksTab();
+            updateBadges();
+            bindEvents();
+
+            setSheetSnap('half', false);
+            resetMapView(false);
+        });
+    </script>
+</body>
+</html>
