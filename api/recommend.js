@@ -2,28 +2,24 @@
 const rateLimitMap = new Map();
 
 module.exports = async (req, res) => {
-  // POST 요청만 허용
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method Not Allowed' });
   }
 
-  // 1. 간단한 IP 기반 호출 제한 (1분당 최대 10회)
+  // 1. IP 기반 호출 제한 (1분당 최대 10회)
   const ip = (req.headers['x-forwarded-for'] || req.socket?.remoteAddress || 'unknown').split(',')[0].trim();
   const now = Date.now();
-  const windowMs = 60 * 1000;
-  const maxRequests = 10;
-
-  const userLogs = (rateLimitMap.get(ip) || []).filter((t) => now - t < windowMs);
-  if (userLogs.length >= maxRequests) {
+  const userLogs = (rateLimitMap.get(ip) || []).filter((t) => now - t < 60 * 1000);
+  if (userLogs.length >= 10) {
     return res.status(429).json({ error: '요청이 너무 많습니다. 1분 뒤에 다시 시도해 주세요.' });
   }
   userLogs.push(now);
   rateLimitMap.set(ip, userLogs);
 
-  // 2. 서버 환경변수에서 Gemini API 키 불러오기 (외부 노출 차단)
-  const apiKey = process.env.GEMINI_API_KEY;
+  // 2. 환경변수 확인 (공백 자동 제거)
+  const apiKey = (process.env.GEMINI_API_KEY || '').trim();
   if (!apiKey) {
-    return res.status(500).json({ error: '서버에 GEMINI_API_KEY 환경변수가 설정되지 않았습니다.' });
+    return res.status(500).json({ error: 'Vercel 환경변수(GEMINI_API_KEY)가 비어 있습니다. 등록 후 Redeploy 해주세요.' });
   }
 
   try {
@@ -94,33 +90,44 @@ ${mealText}
 }
 `;
 
-    // 3. Gemini 2.5 Flash REST API 호출 (별도 라이브러리 설치 불필요)
-    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
-    const response = await fetch(geminiUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: {
-          responseMimeType: 'application/json',
-          temperature: 0.7,
-        },
-      }),
-    });
+    // 3. Gemini 모델 순차 시도 (404 발생 시 자동 폴백)
+    const models = ['gemini-2.5-flash', 'gemini-2.0-flash'];
+    let lastErrorMsg = '';
 
-    if (!response.ok) {
-      const errText = await response.text();
-      return res.status(response.status).json({ error: 'Gemini API 호출 실패', detail: errText });
+    for (const model of models) {
+      const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+      const response = await fetch(geminiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: {
+            responseMimeType: 'application/json',
+            temperature: 0.7,
+          },
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (!text) {
+          return res.status(502).json({ error: 'AI 응답이 비어 있습니다.' });
+        }
+        return res.status(200).json(JSON.parse(text));
+      }
+
+      const errData = await response.json().catch(() => ({}));
+      lastErrorMsg = errData.error?.message || `HTTP ${response.status}`;
+
+      // 404(모델 없음)가 아니면 바로 에러 반환 (키 오류, 한도 초과 등)
+      if (response.status !== 404) {
+        return res.status(502).json({ error: `Gemini API 오류: ${lastErrorMsg}` });
+      }
     }
 
-    const data = await response.json();
-    const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-    if (!text) {
-      return res.status(500).json({ error: 'AI 응답이 비어 있습니다.' });
-    }
-
-    return res.status(200).json(JSON.parse(text));
+    return res.status(502).json({ error: `Gemini 모델 호출 실패: ${lastErrorMsg}` });
   } catch (err) {
-    return res.status(500).json({ error: '서버 처리 중 오류가 발생했습니다.', detail: err.message });
+    return res.status(500).json({ error: `서버 처리 오류: ${err.message}` });
   }
 };
